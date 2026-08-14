@@ -4,9 +4,10 @@ import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import AlertCard from '../components/AlertCard';
 import advisoryService from '../services/advisoryService';
-import DEFAULT_LOCATION from '../config/locations';
+import { useAuth } from '../context/AuthContext';
 
 const Advisory = () => {
+  const { activeLocation } = useAuth();
   const [advisories, setAdvisories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -16,8 +17,8 @@ const Advisory = () => {
     setLoading(true);
     setError(null);
     try {
-      const lat = DEFAULT_LOCATION.latitude || DEFAULT_LOCATION.lat || 19.8833;
-      const lon = DEFAULT_LOCATION.longitude || DEFAULT_LOCATION.lon || 74.4833;
+      const lat = activeLocation.latitude || 19.8833;
+      const lon = activeLocation.longitude || 74.4833;
       const response = await advisoryService.getAdvisories(lat, lon);
       const list = response?.records || response?.advisories || (Array.isArray(response) ? response : []);
       setAdvisories(list);
@@ -33,8 +34,8 @@ const Advisory = () => {
     setGenerating(true);
     setError(null);
     try {
-      const lat = DEFAULT_LOCATION.latitude || DEFAULT_LOCATION.lat || 19.8833;
-      const lon = DEFAULT_LOCATION.longitude || DEFAULT_LOCATION.lon || 74.4833;
+      const lat = activeLocation.latitude || 19.8833;
+      const lon = activeLocation.longitude || 74.4833;
       const response = await advisoryService.generateAdvisories(lat, lon);
       const list = response?.records || response?.advisories || (Array.isArray(response) ? response : []);
       setAdvisories(list);
@@ -48,7 +49,7 @@ const Advisory = () => {
 
   useEffect(() => {
     fetchAdvisories();
-  }, []);
+  }, [activeLocation]);
 
   return (
     <DashboardLayout>
@@ -56,7 +57,7 @@ const Advisory = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1>Farmer Advisory & Decision Support</h1>
-            <p>Integrated multi-source intelligence converting telemetry into actionable agronomic decisions.</p>
+            <p>Targeted agronomic advisories generated for <strong>{activeLocation.name}</strong> ({activeLocation.district}).</p>
           </div>
           <button
             className="btn btn-primary"
@@ -71,22 +72,22 @@ const Advisory = () => {
       {/* Advisory Architecture Engine Card */}
       <div className="card" style={{ marginBottom: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, #ffffff 0%, #f6faf7 100%)' }}>
         <h3 style={{ fontSize: '1rem', color: 'var(--primary-900)', marginBottom: '1rem', textAlign: 'center' }}>
-          🌾 Unified Decision-Support Pipeline
+          🌾 Unified Decision-Support Pipeline ({activeLocation.district})
         </h3>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <span style={{ padding: '0.4rem 0.75rem', background: '#fff', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: '600' }}>
-              🌤️ Weather (Open-Meteo)
+              🌤️ {activeLocation.district} Weather
             </span>
             <span style={{ padding: '0.4rem 0.75rem', background: '#fff', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: '600' }}>
-              🌱 Soil (NPK & pH)
+              🌱 {activeLocation.soilType}
             </span>
             <span style={{ padding: '0.4rem 0.75rem', background: '#fff', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: '600' }}>
-              🛰️ Satellite NDVI
+              🛰️ Sentinel-2 NDVI
             </span>
             <span style={{ padding: '0.4rem 0.75rem', background: '#fff', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', fontWeight: '600' }}>
-              💰 APMC Mandi
+              💰 {activeLocation.apmcMandi}
             </span>
           </div>
 
@@ -113,7 +114,7 @@ const Advisory = () => {
       </div>
 
       {loading || generating ? (
-        <LoadingState message="Cross-referencing weather risk, soil nutrient levels, and seasonal crop cycles..." />
+        <LoadingState message={`Cross-referencing weather, soil, and market intelligence for ${activeLocation.name}...`} />
       ) : error ? (
         <ErrorState message={error} onRetry={handleGenerate} />
       ) : advisories.length === 0 ? (

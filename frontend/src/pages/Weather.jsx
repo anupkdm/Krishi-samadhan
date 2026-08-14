@@ -5,9 +5,10 @@ import ErrorState from '../components/ErrorState';
 import SourceBadge from '../components/SourceBadge';
 import MetricCard from '../components/MetricCard';
 import weatherService from '../services/weatherService';
-import DEFAULT_LOCATION from '../config/locations';
+import { useAuth } from '../context/AuthContext';
 
 const Weather = () => {
+  const { activeLocation } = useAuth();
   const [currentWeather, setCurrentWeather] = useState(null);
   const [forecastDays, setForecastDays] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,8 +18,8 @@ const Weather = () => {
     setLoading(true);
     setError(null);
     try {
-      const lat = DEFAULT_LOCATION.latitude || DEFAULT_LOCATION.lat || 19.8833;
-      const lon = DEFAULT_LOCATION.longitude || DEFAULT_LOCATION.lon || 74.4833;
+      const lat = activeLocation.latitude || 19.8833;
+      const lon = activeLocation.longitude || 74.4833;
 
       const [current, forecastRes] = await Promise.all([
         weatherService.getCurrentWeather(lat, lon),
@@ -75,7 +76,7 @@ const Weather = () => {
 
   useEffect(() => {
     fetchWeatherData();
-  }, []);
+  }, [activeLocation]);
 
   const getWeatherEmoji = (code) => {
     if (code === 0) return '☀️ Clear Sky';
@@ -104,7 +105,7 @@ const Weather = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <LoadingState message="Fetching live meteorological data from Open-Meteo..." />
+        <LoadingState message={`Fetching live meteorological data for ${activeLocation.name}...`} />
       </DashboardLayout>
     );
   }
@@ -123,7 +124,7 @@ const Weather = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1>Weather Monitoring</h1>
-            <p>Real-time micrometeorology and 7-day agricultural forecasts for <strong>{DEFAULT_LOCATION.name}</strong></p>
+            <p>Real-time micrometeorology and 7-day agricultural forecasts for <strong>{activeLocation.name}</strong></p>
           </div>
           <SourceBadge source="Open-Meteo WMO Station" status="Live" />
         </div>
@@ -133,7 +134,7 @@ const Weather = () => {
       <div className="weather-hero-card">
         <div>
           <div style={{ textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-200)', fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-            Current Ambient Conditions
+            Current Ambient Conditions — {activeLocation.name}
           </div>
           <div className="weather-hero-temp">
             {currentWeather?.temperature ?? 28}°C
@@ -142,7 +143,7 @@ const Weather = () => {
             {getWeatherEmoji(currentWeather?.weather_code ?? 1)}
           </div>
           <div style={{ color: 'var(--primary-200)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-            Station Lat: {DEFAULT_LOCATION.latitude}°N | Lon: {DEFAULT_LOCATION.longitude}°E
+            Station Lat: {activeLocation.latitude}°N | Lon: {activeLocation.longitude}°E | District: {activeLocation.district}
           </div>
         </div>
 
@@ -169,7 +170,7 @@ const Weather = () => {
       {/* 7-Day Agricultural Forecast */}
       <div style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontSize: '1.25rem', color: 'var(--primary-900)', marginBottom: '1rem' }}>
-          📅 7-Day Agricultural Synoptic Forecast
+          📅 7-Day Agricultural Synoptic Forecast ({activeLocation.district})
         </h2>
 
         {forecastDays.length > 0 ? (
@@ -206,14 +207,14 @@ const Weather = () => {
         <div className="card" style={{ borderLeft: '5px solid var(--warning)' }}>
           <h2 style={{ fontSize: '1.15rem', color: 'var(--primary-900)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span>⚠️</span>
-            <span>Automated Agricultural Weather Signals</span>
+            <span>Automated Agricultural Weather Signals for {activeLocation.name}</span>
           </h2>
           <ul style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <li style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>
-              {currentWeather.signals.spray_favorable ? '✅ Spray Favorable: Wind speeds are gentle and no precipitation expected.' : '⚠️ Spray Warning: High winds or rain detected, defer chemical spraying.'}
+              {currentWeather.signals.spray_favorable ? '✅ Spray Favorable: Wind speeds are gentle and no precipitation expected in ' + activeLocation.district + '.' : '⚠️ Spray Warning: Defer chemical spraying due to wind/moisture shifts.'}
             </li>
             <li style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>
-              {currentWeather.signals.irrigation_need ? '💧 Irrigation Recommended: Low precipitation in past 24 hours.' : '✅ Soil Moisture Sufficient: Defer heavy irrigation.'}
+              {currentWeather.signals.irrigation_need ? '💧 Irrigation Recommended: Low precipitation in ' + activeLocation.name + '.' : '✅ Soil Moisture Sufficient: Defer heavy irrigation.'}
             </li>
           </ul>
         </div>

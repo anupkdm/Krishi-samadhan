@@ -4,21 +4,22 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import authService from '../services/authService';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { AVAILABLE_LOCATIONS } from '../config/locations';
 
 const Register = () => {
   const { t } = useLanguage();
+  const { loginUser } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('farmer');
-  const [location, setLocation] = useState('Sangamner');
+  const [locationKey, setLocationKey] = useState('Sangamner');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const navigate = useNavigate();
-
-  const localities = ['Sangamner', 'Nashik', 'Kopargaon', 'Sinnar', 'Shirdi', 'Rahata', 'Yeola', 'Pune', 'Ahmednagar'];
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -33,16 +34,23 @@ const Register = () => {
     }
 
     try {
-      const response = await authService.register(name, email, password, role, `${location}, Maharashtra`);
+      const selectedLocObj = AVAILABLE_LOCATIONS[locationKey];
+      const locationString = `${locationKey}, Maharashtra`;
+
+      const response = await authService.register(name, email, password, role, locationString);
       if (response && response.token) {
-        localStorage.setItem('token', response.token);
-        if (response.user) {
-          localStorage.setItem('user', JSON.stringify(response.user));
-        }
-        setSuccess('Account created successfully! Entering dashboard...');
+        const userData = response.user || {
+          name,
+          email,
+          role,
+          location: locationString
+        };
+
+        loginUser(response.token, userData);
+        setSuccess('Account created successfully! Entering personalized farm dashboard...');
         setTimeout(() => {
           navigate('/dashboard');
-        }, 600);
+        }, 500);
       } else {
         navigate('/login');
       }
@@ -54,12 +62,14 @@ const Register = () => {
     }
   };
 
+  const selectedLocData = AVAILABLE_LOCATIONS[locationKey];
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
       <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 1.5rem' }}>
-        <div className="card" style={{ width: '100%', maxWidth: '480px', padding: '2.25rem', boxShadow: 'var(--shadow-lg)' }}>
+        <div className="card" style={{ width: '100%', maxWidth: '520px', padding: '2.25rem', boxShadow: 'var(--shadow-lg)' }}>
           <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
             <img
               src="/logo.png"
@@ -113,6 +123,7 @@ const Register = () => {
               />
             </div>
 
+            {/* Role & Location Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label">User Role</label>
@@ -128,19 +139,31 @@ const Register = () => {
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Primary Locality</label>
+                <label className="form-label">📍 Farm Location / Taluka</label>
                 <select
                   className="form-select"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  value={locationKey}
+                  onChange={(e) => setLocationKey(e.target.value)}
                   disabled={loading}
                 >
-                  {localities.map(loc => (
-                    <option key={loc} value={loc}>{loc}</option>
+                  {Object.keys(AVAILABLE_LOCATIONS).map(loc => (
+                    <option key={loc} value={loc}>
+                      {loc} ({AVAILABLE_LOCATIONS[loc].district})
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
+
+            {/* Selected Location Preview Badge */}
+            {selectedLocData && (
+              <div style={{ background: 'var(--primary-50)', border: '1px solid var(--primary-200)', borderRadius: 'var(--radius-sm)', padding: '0.65rem 0.85rem', marginBottom: '1rem', fontSize: '0.8rem', color: 'var(--primary-900)' }}>
+                📍 <strong>Selected Area:</strong> {selectedLocData.name} ({selectedLocData.latitude}°N, {selectedLocData.longitude}°E)
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  Soil: {selectedLocData.soilType} | Mandi: {selectedLocData.apmcMandi}
+                </div>
+              </div>
+            )}
 
             <div className="form-group" style={{ marginBottom: '1.5rem', position: 'relative' }}>
               <label className="form-label">Password (min 6 chars)</label>

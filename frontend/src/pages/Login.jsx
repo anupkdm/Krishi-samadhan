@@ -4,9 +4,11 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import authService from '../services/authService';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const { t } = useLanguage();
+  const { loginUser } = useAuth();
   const [email, setEmail] = useState('farmer@krishisamadhan.in');
   const [password, setPassword] = useState('farmer123');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,14 +26,18 @@ const Login = () => {
     try {
       const response = await authService.login(email, password);
       if (response && response.token) {
-        localStorage.setItem('token', response.token);
-        if (response.user) {
-          localStorage.setItem('user', JSON.stringify(response.user));
-        }
+        const userData = response.user || {
+          name: email.includes('admin') ? 'Extension Officer' : 'Ramesh Patil',
+          email,
+          role: email.includes('admin') ? 'authority' : 'farmer',
+          location: 'Sangamner, Maharashtra'
+        };
+
+        loginUser(response.token, userData);
         setSuccess('Login successful! Redirecting to your dashboard...');
         setTimeout(() => {
           navigate('/dashboard');
-        }, 600);
+        }, 500);
       } else {
         setError('Unable to authenticate with the server. Please verify credentials.');
       }

@@ -4,9 +4,10 @@ import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import SourceBadge from '../components/SourceBadge';
 import soilService from '../services/soilService';
-import DEFAULT_LOCATION from '../config/locations';
+import { useAuth } from '../context/AuthContext';
 
 const Soil = () => {
+  const { activeLocation } = useAuth();
   const [soilData, setSoilData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,8 +16,8 @@ const Soil = () => {
     setLoading(true);
     setError(null);
     try {
-      const lat = DEFAULT_LOCATION.latitude || DEFAULT_LOCATION.lat || 19.8833;
-      const lon = DEFAULT_LOCATION.longitude || DEFAULT_LOCATION.lon || 74.4833;
+      const lat = activeLocation.latitude || 19.8833;
+      const lon = activeLocation.longitude || 74.4833;
       const response = await soilService.getSoilData(lat, lon);
       setSoilData(response);
     } catch (err) {
@@ -29,7 +30,7 @@ const Soil = () => {
 
   useEffect(() => {
     fetchSoilData();
-  }, []);
+  }, [activeLocation]);
 
   const renderProgressBar = (label, value, min, max, unit, statusText) => {
     const numVal = typeof value === 'number' ? value : parseFloat(value) || 0;
@@ -53,7 +54,7 @@ const Soil = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <LoadingState message="Retrieving soil health profile and nutrient indicators..." />
+        <LoadingState message={`Retrieving soil health profile and nutrient indicators for ${activeLocation.name}...`} />
       </DashboardLayout>
     );
   }
@@ -73,9 +74,8 @@ const Soil = () => {
   const phosphorus = soilData?.phosphorus ?? 24;
   const potassium = soilData?.potassium ?? 310;
   const organicCarbon = soilData?.organicCarbon ?? soilData?.organicMatter ?? 0.68;
-  const soilType = soilData?.soilType ?? 'Vertisol (Deep Black Cotton Soil)';
+  const soilType = activeLocation.soilType || soilData?.soilType || 'Vertisol (Deep Black Cotton Soil)';
 
-  // Safe recommendations normalization (handles arrays, objects, or strings)
   const getRecommendationList = (recs) => {
     if (Array.isArray(recs)) return recs;
     if (typeof recs === 'object' && recs !== null) {
@@ -83,9 +83,9 @@ const Soil = () => {
     }
     if (typeof recs === 'string') return [recs];
     return [
-      'Apply organic farmyard manure (5 tonnes/acre) to enhance soil organic carbon.',
-      'Ensure ridge and furrow planting for adequate drainage in heavy black soil (Vertisols).',
-      'Apply Urea in split doses (50% basal, 25% at tillering, 25% at panicle emergence).',
+      `Apply organic farmyard manure (5 tonnes/acre) to enhance soil organic carbon in ${activeLocation.district} soils.`,
+      `Ensure ridge and furrow planting for adequate drainage in heavy ${soilType}.`,
+      `Apply Urea in split doses (50% basal, 25% at tillering, 25% at panicle emergence) for local crops (${activeLocation.primaryCrops?.slice(0, 3).join(', ') || 'Onion, Wheat'}).`,
       'Incorporate bio-fertilizers like Azotobacter and PSB to improve nutrient bioavailability.'
     ];
   };
@@ -98,7 +98,7 @@ const Soil = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1>Soil Health & Nutrients</h1>
-            <p>Soil chemistry, macronutrients (NPK), moisture profile, and agronomic soil conditioning.</p>
+            <p>Soil chemistry, macronutrients (NPK), moisture profile, and agronomic conditioning for <strong>{activeLocation.name}</strong>.</p>
           </div>
           <SourceBadge source="SoilGrids / Regional Agronomy Lab" status="Optimal" />
         </div>
@@ -108,7 +108,7 @@ const Soil = () => {
       <div className="card" style={{ marginBottom: '2rem', padding: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-around', flexWrap: 'wrap', gap: '2rem', background: 'linear-gradient(135deg, #ffffff 0%, #f6faf7 100%)' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
-            Overall Soil Health Index
+            Overall Soil Health Index ({activeLocation.district})
           </div>
           <div style={{ fontSize: '4rem', fontWeight: '800', color: 'var(--primary-700)', lineHeight: 1, margin: '0.5rem 0' }}>
             {score}<span style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>/100</span>
@@ -118,10 +118,10 @@ const Soil = () => {
 
         <div style={{ maxWidth: '420px' }}>
           <h3 style={{ fontSize: '1.15rem', color: 'var(--primary-900)', marginBottom: '0.5rem' }}>
-            Soil Classification: {soilType}
+            Classification: {soilType}
           </h3>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-            Typical vertisol of the Maharashtra Deccan plateau. Characterized by deep montmorillonite clay with exceptional moisture retention and high cation exchange capacity.
+            Typical soil profile for {activeLocation.name} ({activeLocation.latitude}°N, {activeLocation.longitude}°E). Suitable for {activeLocation.primaryCrops?.join(', ') || 'Onion, Wheat, Pomegranate'}.
           </p>
         </div>
       </div>
@@ -166,7 +166,7 @@ const Soil = () => {
       <div className="card" style={{ borderLeft: '5px solid var(--primary-600)' }}>
         <h2 style={{ fontSize: '1.2rem', color: 'var(--primary-900)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span>💡</span>
-          <span>Agronomic Soil Health Recommendations</span>
+          <span>Agronomic Soil Health Recommendations for {activeLocation.name}</span>
         </h2>
         <ul style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
           {recommendations.map((rec, idx) => (
