@@ -3,7 +3,6 @@ import DashboardLayout from '../components/DashboardLayout';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import AlertCard from '../components/AlertCard';
-import SourceBadge from '../components/SourceBadge';
 import advisoryService from '../services/advisoryService';
 import DEFAULT_LOCATION from '../config/locations';
 
@@ -20,7 +19,8 @@ const Advisory = () => {
       const lat = DEFAULT_LOCATION.latitude || DEFAULT_LOCATION.lat || 19.8833;
       const lon = DEFAULT_LOCATION.longitude || DEFAULT_LOCATION.lon || 74.4833;
       const response = await advisoryService.getAdvisories(lat, lon);
-      setAdvisories(response?.advisories || []);
+      const list = response?.records || response?.advisories || (Array.isArray(response) ? response : []);
+      setAdvisories(list);
     } catch (err) {
       console.error('Advisory fetch error:', err);
       setError('Failed to fetch agricultural advisories.');
@@ -36,7 +36,8 @@ const Advisory = () => {
       const lat = DEFAULT_LOCATION.latitude || DEFAULT_LOCATION.lat || 19.8833;
       const lon = DEFAULT_LOCATION.longitude || DEFAULT_LOCATION.lon || 74.4833;
       const response = await advisoryService.generateAdvisories(lat, lon);
-      setAdvisories(response?.advisories || []);
+      const list = response?.records || response?.advisories || (Array.isArray(response) ? response : []);
+      setAdvisories(list);
     } catch (err) {
       console.error('Advisory generation error:', err);
       setError('Failed to generate fresh advisories.');

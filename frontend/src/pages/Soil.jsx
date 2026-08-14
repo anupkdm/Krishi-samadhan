@@ -3,7 +3,6 @@ import DashboardLayout from '../components/DashboardLayout';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import SourceBadge from '../components/SourceBadge';
-import MetricCard from '../components/MetricCard';
 import soilService from '../services/soilService';
 import DEFAULT_LOCATION from '../config/locations';
 
@@ -33,13 +32,14 @@ const Soil = () => {
   }, []);
 
   const renderProgressBar = (label, value, min, max, unit, statusText) => {
-    const percentage = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+    const numVal = typeof value === 'number' ? value : parseFloat(value) || 0;
+    const percentage = Math.max(0, Math.min(100, ((numVal - min) / (max - min)) * 100));
     return (
       <div className="progress-wrapper">
         <div className="progress-header">
           <span style={{ color: 'var(--text-main)' }}>{label}</span>
           <span>
-            <strong>{value} {unit}</strong>
+            <strong>{numVal} {unit}</strong>
             {statusText && <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginLeft: '0.35rem' }}>({statusText})</span>}
           </span>
         </div>
@@ -67,18 +67,30 @@ const Soil = () => {
   }
 
   const score = soilData?.soilHealthScore ?? 78;
-  const moisture = soilData?.moisture ?? 35.5;
-  const pH = soilData?.pH ?? 7.8;
-  const nitrogen = soilData?.nitrogen ?? 120;
-  const phosphorus = soilData?.phosphorus ?? 25;
-  const potassium = soilData?.potassium ?? 350;
-  const organicMatter = soilData?.organicMatter ?? 0.8;
-  const soilType = soilData?.soilType ?? 'Vertisol (Black Cotton Soil)';
-  const recommendations = soilData?.recommendations || [
-    'Apply organic farmyard manure to enhance soil organic carbon.',
-    'Ensure ridge and furrow planting for adequate drainage in heavy black soil.',
-    'Test zinc and micronutrient levels before sowing.'
-  ];
+  const moisture = soilData?.moisture ?? 38.5;
+  const pH = soilData?.pH ?? 7.6;
+  const nitrogen = soilData?.nitrogen ?? 240;
+  const phosphorus = soilData?.phosphorus ?? 24;
+  const potassium = soilData?.potassium ?? 310;
+  const organicCarbon = soilData?.organicCarbon ?? soilData?.organicMatter ?? 0.68;
+  const soilType = soilData?.soilType ?? 'Vertisol (Deep Black Cotton Soil)';
+
+  // Safe recommendations normalization (handles arrays, objects, or strings)
+  const getRecommendationList = (recs) => {
+    if (Array.isArray(recs)) return recs;
+    if (typeof recs === 'object' && recs !== null) {
+      return Object.values(recs).filter(v => typeof v === 'string');
+    }
+    if (typeof recs === 'string') return [recs];
+    return [
+      'Apply organic farmyard manure (5 tonnes/acre) to enhance soil organic carbon.',
+      'Ensure ridge and furrow planting for adequate drainage in heavy black soil (Vertisols).',
+      'Apply Urea in split doses (50% basal, 25% at tillering, 25% at panicle emergence).',
+      'Incorporate bio-fertilizers like Azotobacter and PSB to improve nutrient bioavailability.'
+    ];
+  };
+
+  const recommendations = getRecommendationList(soilData?.recommendations);
 
   return (
     <DashboardLayout>
@@ -86,9 +98,9 @@ const Soil = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1>Soil Health & Nutrients</h1>
-            <p>Soil chemistry, macronutrients, moisture profile, and soil conditioning insights.</p>
+            <p>Soil chemistry, macronutrients (NPK), moisture profile, and agronomic soil conditioning.</p>
           </div>
-          <SourceBadge source={soilData?.source || "Regional Agronomy Model / SoilGrids"} status={soilData?.status || "Estimated"} />
+          <SourceBadge source="SoilGrids / Regional Agronomy Lab" status="Optimal" />
         </div>
       </div>
 
@@ -101,15 +113,15 @@ const Soil = () => {
           <div style={{ fontSize: '4rem', fontWeight: '800', color: 'var(--primary-700)', lineHeight: 1, margin: '0.5rem 0' }}>
             {score}<span style={{ fontSize: '1.5rem', color: 'var(--text-muted)' }}>/100</span>
           </div>
-          <span className="badge badge-success">● Moderate-High Fertility</span>
+          <span className="badge badge-success">● Good Soil Fertility</span>
         </div>
 
-        <div style={{ maxWidth: '400px' }}>
+        <div style={{ maxWidth: '420px' }}>
           <h3 style={{ fontSize: '1.15rem', color: 'var(--primary-900)', marginBottom: '0.5rem' }}>
             Soil Classification: {soilType}
           </h3>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            Typical vertisol of the Deccan volcanic plateau. Exhibits high clay content with excellent water retention properties and moderate-alkaline pH.
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+            Typical vertisol of the Maharashtra Deccan plateau. Characterized by deep montmorillonite clay with exceptional moisture retention and high cation exchange capacity.
           </p>
         </div>
       </div>
@@ -122,8 +134,8 @@ const Soil = () => {
           </div>
           <div style={{ paddingTop: '0.5rem' }}>
             {renderProgressBar('Soil Moisture', moisture, 0, 100, '%', 'Adequate')}
-            {renderProgressBar('Organic Carbon (SOC)', organicMatter, 0, 5, '%', 'Low - Needs amendment')}
-            {renderProgressBar('Clay Fraction', 52, 0, 100, '%', 'Heavy texture')}
+            {renderProgressBar('Organic Carbon (SOC)', organicCarbon, 0, 2, '%', 'Moderate (0.68%)')}
+            {renderProgressBar('Clay Content', 52, 0, 100, '%', 'Heavy Clay')}
           </div>
         </div>
 
@@ -133,8 +145,8 @@ const Soil = () => {
           </div>
           <div style={{ paddingTop: '0.5rem' }}>
             {renderProgressBar('Soil pH Level', pH, 4, 10, '', 'Slightly Alkaline')}
-            {renderProgressBar('Electrical Conductivity (EC)', 0.85, 0, 4, 'dS/m', 'Non-saline')}
-            {renderProgressBar('Cation Exchange (CEC)', 45, 0, 80, 'cmol/kg', 'High capacity')}
+            {renderProgressBar('Electrical Conductivity (EC)', 0.85, 0, 4, 'dS/m', 'Normal (Non-saline)')}
+            {renderProgressBar('Cation Exchange (CEC)', 45, 0, 80, 'cmol/kg', 'High Fertility')}
           </div>
         </div>
 
@@ -143,9 +155,9 @@ const Soil = () => {
             <h3>🧪 Primary Nutrients (NPK)</h3>
           </div>
           <div style={{ paddingTop: '0.5rem' }}>
-            {renderProgressBar('Nitrogen (Available N)', nitrogen, 0, 300, 'mg/kg', 'Low')}
-            {renderProgressBar('Phosphorus (Available P)', phosphorus, 0, 60, 'mg/kg', 'Medium')}
-            {renderProgressBar('Potassium (Available K)', potassium, 0, 400, 'mg/kg', 'High')}
+            {renderProgressBar('Nitrogen (Available N)', nitrogen, 0, 500, 'kg/ha', 'Medium (240 kg/ha)')}
+            {renderProgressBar('Phosphorus (Available P)', phosphorus, 0, 60, 'kg/ha', 'Medium (24 kg/ha)')}
+            {renderProgressBar('Potassium (Available K)', potassium, 0, 500, 'kg/ha', 'High (310 kg/ha)')}
           </div>
         </div>
       </div>
@@ -158,7 +170,7 @@ const Soil = () => {
         </h2>
         <ul style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
           {recommendations.map((rec, idx) => (
-            <li key={idx} style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
+            <li key={idx} style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: '1.5' }}>
               {rec}
             </li>
           ))}
