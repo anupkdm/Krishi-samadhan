@@ -7,10 +7,13 @@ import MetricCard from '../components/MetricCard';
 import weatherService from '../services/weatherService';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { DEFAULT_LOCATION } from '../config/locations';
 
 const Weather = () => {
-  const { activeLocation } = useAuth();
+  const auth = useAuth();
+  const activeLocation = auth?.activeLocation || DEFAULT_LOCATION;
   const { t, language } = useLanguage();
+
   const [currentWeather, setCurrentWeather] = useState(null);
   const [forecastDays, setForecastDays] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,8 +23,8 @@ const Weather = () => {
     setLoading(true);
     setError(null);
     try {
-      const lat = activeLocation.latitude || 19.8833;
-      const lon = activeLocation.longitude || 74.4833;
+      const lat = activeLocation?.latitude || 19.8833;
+      const lon = activeLocation?.longitude || 74.4833;
 
       const [current, forecastRes] = await Promise.all([
         weatherService.getCurrentWeather(lat, lon),
@@ -31,27 +34,48 @@ const Weather = () => {
       setCurrentWeather(current);
 
       const parsedDays = [];
-      if (forecastRes && forecastRes.forecast && Array.isArray(forecastRes.forecast)) {
+
+      // Case 1: forecast is an array of day objects
+      if (forecastRes && Array.isArray(forecastRes.forecast)) {
         forecastRes.forecast.forEach((item, idx) => {
           parsedDays.push({
             date: item.date || `Day ${idx + 1}`,
             maxTemp: Math.round(item.temp_max ?? item.maxTemp ?? 31),
             minTemp: Math.round(item.temp_min ?? item.minTemp ?? 20),
-            precipProb: item.rain > 0 ? 65 : 10,
+            precipProb: item.precipitation_probability ?? (item.rain > 0 ? 60 : 10),
             weatherCode: item.weather_code ?? (item.rain > 0 ? 61 : 1)
           });
         });
-      } else if (forecastRes && forecastRes.daily && forecastRes.daily.time) {
-        for (let i = 0; i < forecastRes.daily.time.length; i++) {
+      }
+      // Case 2: forecast is an object containing daily time arrays (Open-Meteo format)
+      else if (forecastRes && forecastRes.forecast && Array.isArray(forecastRes.forecast.time)) {
+        const d = forecastRes.forecast;
+        for (let i = 0; i < d.time.length; i++) {
           parsedDays.push({
-            date: forecastRes.daily.time[i],
-            maxTemp: Math.round(forecastRes.daily.temperature_2m_max?.[i] ?? 31),
-            minTemp: Math.round(forecastRes.daily.temperature_2m_min?.[i] ?? 20),
-            precipProb: forecastRes.daily.precipitation_probability_max?.[i] ?? (forecastRes.daily.precipitation_sum?.[i] > 0 ? 60 : 10),
-            weatherCode: forecastRes.daily.weather_code?.[i] ?? 1
+            date: d.time[i],
+            maxTemp: Math.round(d.temperature_2m_max?.[i] ?? 31),
+            minTemp: Math.round(d.temperature_2m_min?.[i] ?? 20),
+            precipProb: d.precipitation_probability_max?.[i] ?? (d.precipitation_sum?.[i] > 0 ? 60 : 10),
+            weatherCode: d.weather_code?.[i] ?? 1
           });
         }
-      } else {
+      }
+      // Case 3: daily object directly on response
+      else if (forecastRes && forecastRes.daily && Array.isArray(forecastRes.daily.time)) {
+        const d = forecastRes.daily;
+        for (let i = 0; i < d.time.length; i++) {
+          parsedDays.push({
+            date: d.time[i],
+            maxTemp: Math.round(d.temperature_2m_max?.[i] ?? 31),
+            minTemp: Math.round(d.temperature_2m_min?.[i] ?? 20),
+            precipProb: d.precipitation_probability_max?.[i] ?? (d.precipitation_sum?.[i] > 0 ? 60 : 10),
+            weatherCode: d.weather_code?.[i] ?? 1
+          });
+        }
+      }
+
+      // Safe fallback if parsing resulted in empty list
+      if (parsedDays.length === 0) {
         for (let i = 0; i < 7; i++) {
           const d = new Date();
           d.setDate(d.getDate() + i);
@@ -79,30 +103,51 @@ const Weather = () => {
   }, [activeLocation]);
 
   const getWeatherEmoji = (code) => {
-    if (code === 0) return language === 'mr' ? '☀️ निरभ्र आकाश' : language === 'hi' ? '☀️ साफ आसमान' : '☀️ Clear Sky';
-    if (code >= 1 && code <= 3) return language === 'mr' ? '🌤️ अंशतः ढगाळ' : language === 'hi' ? '🌤️ आंशिक बादल' : '🌤️ Partly Cloudy';
-    if (code >= 45 && code <= 48) return language === 'mr' ? '🌫️ धुके' : language === 'hi' ? '🌫️ कोहरा' : '🌫️ Foggy';
-    if (code >= 51 && code <= 55) return language === 'mr' ? '🌦️ हलक्या सरी' : language === 'hi' ? '🌦️ बूंदाबांदी' : '🌦️ Drizzle';
-    if (code >= 61 && code <= 65) return language === 'mr' ? '🌧️ पाऊस' : language === 'hi' ? '🌧️ बारिश' : '🌧️ Rain';
-    if (code >= 80 && code <= 82) return language === 'mr' ? '🌧️ पावसाच्या जोरदार सरी' : language === 'hi' ? '🌧️ तेज बारिश' : '🌧️ Showers';
-    if (code >= 95 && code <= 99) return language === 'mr' ? '⛈️ वादळी पाऊस' : language === 'hi' ? '⛈️ आंधी-तूफान' : '⛈️ Thunderstorm';
+    const c = typeof code === 'number' ? code : parseInt(code, 10) || 1;
+    if (c === 0) return language === 'mr' ? '☀️ निरभ्र आकाश' : language === 'hi' ? '☀️ साफ आसमान' : '☀️ Clear Sky';
+    if (c >= 1 && c <= 3) return language === 'mr' ? '🌤️ अंशतः ढगाळ' : language === 'hi' ? '🌤️ आंशिक बादल' : '🌤️ Partly Cloudy';
+    if (c >= 45 && c <= 48) return language === 'mr' ? '🌫️ धुके' : language === 'hi' ? '🌫️ कोहरा' : '🌫️ Foggy';
+    if (c >= 51 && c <= 55) return language === 'mr' ? '🌦️ हलक्या सरी' : language === 'hi' ? '🌦️ बूंदाबांदी' : '🌦️ Drizzle';
+    if (c >= 61 && c <= 65) return language === 'mr' ? '🌧️ पाऊस' : language === 'hi' ? '🌧️ बारिश' : '🌧️ Rain';
+    if (c >= 80 && c <= 82) return language === 'mr' ? '🌧️ पावसाच्या जोरदार सरी' : language === 'hi' ? '🌧️ तेज बारिश' : '🌧️ Showers';
+    if (c >= 95 && c <= 99) return language === 'mr' ? '⛈️ वादळी पाऊस' : language === 'hi' ? '⛈️ आंधी-तूफान' : '⛈️ Thunderstorm';
     return language === 'mr' ? '🌤️ सामान्य हवामान' : language === 'hi' ? '🌤️ सामान्य मौसम' : '🌤️ Mild Weather';
   };
 
   const getWeatherIconOnly = (code) => {
-    if (code === 0) return '☀️';
-    if (code >= 1 && code <= 3) return '🌤️';
-    if (code >= 45 && code <= 48) return '🌫️';
-    if (code >= 51 && code <= 55) return '🌦️';
-    if (code >= 61 && code <= 65) return '🌧️';
-    if (code >= 95 && code <= 99) return '⛈️';
+    const c = typeof code === 'number' ? code : parseInt(code, 10) || 1;
+    if (c === 0) return '☀️';
+    if (c >= 1 && c <= 3) return '🌤️';
+    if (c >= 45 && c <= 48) return '🌫️';
+    if (c >= 51 && c <= 55) return '🌦️';
+    if (c >= 61 && c <= 65) return '🌧️';
+    if (c >= 95 && c <= 99) return '⛈️';
     return '🌤️';
+  };
+
+  // Safe signals normalization to guarantee array of strings
+  const getSignalsList = (rawSignals) => {
+    if (Array.isArray(rawSignals) && rawSignals.length > 0) {
+      return rawSignals.map(s => (typeof s === 'string' ? s : String(s)));
+    }
+    if (typeof rawSignals === 'object' && rawSignals !== null) {
+      const list = [];
+      if (rawSignals.spray_favorable) list.push(t('sprayFavorable'));
+      if (rawSignals.irrigation_need || rawSignals.irrigation_recommended) list.push(t('irrigationRecommended'));
+      if (rawSignals.heat_stress) list.push(language === 'mr' ? '⚠️ उष्णतेचा ताण: पिकांना पाणी द्या.' : '⚠️ Heat stress risk. Ensure irrigation.');
+      if (rawSignals.frost_risk) list.push(language === 'mr' ? '❄️ थंडीची शक्यता: पिकांचे संरक्षण करा.' : '❄️ Frost risk detected.');
+      if (list.length > 0) return list;
+    }
+    return [
+      t('sprayFavorable'),
+      t('irrigationRecommended')
+    ];
   };
 
   if (loading) {
     return (
       <DashboardLayout>
-        <LoadingState message={`${t('loadingMsg')} (${activeLocation.name})...`} />
+        <LoadingState message={`${t('loadingMsg')} (${activeLocation?.name || 'Local Farm'})...`} />
       </DashboardLayout>
     );
   }
@@ -117,14 +162,11 @@ const Weather = () => {
 
   const temp = currentWeather?.temperature !== undefined ? currentWeather.temperature : 28.5;
   const humidity = currentWeather?.humidity !== undefined ? currentWeather.humidity : 67;
-  const wind = currentWeather?.windSpeed !== undefined ? currentWeather.windSpeed : 12.5;
-  const precip = currentWeather?.precipitation !== undefined ? currentWeather.precipitation : 0.0;
-  const code = currentWeather?.weatherCode ?? 1;
+  const wind = currentWeather?.windSpeed ?? currentWeather?.wind_speed ?? 12.5;
+  const precip = currentWeather?.precipitation ?? 0.0;
+  const code = currentWeather?.weatherCode ?? currentWeather?.weather_code ?? 1;
 
-  const signals = currentWeather?.signals || [
-    t('sprayFavorable'),
-    t('irrigationRecommended')
-  ];
+  const signals = getSignalsList(currentWeather?.signals);
 
   return (
     <DashboardLayout>
@@ -132,7 +174,7 @@ const Weather = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1>{t('weatherTitle')}</h1>
-            <p>{t('weatherDesc')} <strong>{activeLocation.name}</strong> ({activeLocation.district}).</p>
+            <p>{t('weatherDesc')} <strong>{activeLocation?.name || 'Sangamner'}</strong> ({activeLocation?.district || 'Maharashtra'}).</p>
           </div>
           <SourceBadge source={currentWeather?.source || "Open-Meteo Micrometeorology"} status="Live Feed" />
         </div>
@@ -162,7 +204,7 @@ const Weather = () => {
                 {getWeatherEmoji(code)}
               </div>
               <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                Station: <strong>{activeLocation.name}</strong> ({activeLocation.latitude}°N, {activeLocation.longitude}°E)
+                Station: <strong>{activeLocation?.name || 'Local'}</strong> ({activeLocation?.latitude || 19.88}°N, {activeLocation?.longitude || 74.48}°E)
               </div>
             </div>
           </div>
@@ -199,7 +241,7 @@ const Weather = () => {
       {/* 7-Day Synoptic Forecast */}
       <div className="card">
         <div className="card-header" style={{ marginBottom: '1.25rem' }}>
-          <h2>{t('synopticForecast')} ({activeLocation.district})</h2>
+          <h2>{t('synopticForecast')} ({activeLocation?.district || 'Region'})</h2>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem' }}>
@@ -216,7 +258,7 @@ const Weather = () => {
               }}
             >
               <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                {idx === 0 ? (language === 'mr' ? 'आज' : language === 'hi' ? 'आज' : 'Today') : d.date.split('-').slice(1).join('/')}
+                {idx === 0 ? (language === 'mr' ? 'आज' : language === 'hi' ? 'आज' : 'Today') : (typeof d.date === 'string' && d.date.includes('-') ? d.date.split('-').slice(1).join('/') : d.date)}
               </div>
               <div style={{ fontSize: '2rem', margin: '0.3rem 0' }}>
                 {getWeatherIconOnly(d.weatherCode)}
