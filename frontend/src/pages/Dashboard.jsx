@@ -7,9 +7,11 @@ import ErrorState from '../components/ErrorState';
 import weatherService from '../services/weatherService';
 import soilService from '../services/soilService';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const Dashboard = () => {
   const { user, activeLocation, openProfileModal } = useAuth();
+  const { t, language } = useLanguage();
   const [weatherData, setWeatherData] = useState(null);
   const [soilData, setSoilData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <LoadingState message={`Loading agricultural intelligence stream for ${activeLocation.name}...`} />
+        <LoadingState message={`${t('loadingMsg')} (${activeLocation.name})...`} />
       </DashboardLayout>
     );
   }
@@ -60,8 +62,8 @@ const Dashboard = () => {
       <div className="page-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h1>Unified Agriculture Dashboard</h1>
-            <p>Real-time telemetry and decision support for <strong>{activeLocation.name}</strong> ({activeLocation.latitude}°N, {activeLocation.longitude}°E)</p>
+            <h1>{t('dashTitle')}</h1>
+            <p>{t('dashDesc')} <strong>{activeLocation.name}</strong> ({activeLocation.latitude}°N, {activeLocation.longitude}°E)</p>
           </div>
           
           <button
@@ -80,7 +82,7 @@ const Dashboard = () => {
             }}
           >
             <span className="source-dot Live"></span>
-            <span>📍 {activeLocation.district} (Tap to Switch)</span>
+            <span>📍 {activeLocation.district} ({language === 'mr' ? 'स्थान बदला' : language === 'hi' ? 'स्थान बदलें' : 'Tap to Switch'})</span>
           </button>
         </div>
       </div>
@@ -88,7 +90,7 @@ const Dashboard = () => {
       {/* Top Overview Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
         <MetricCard
-          title="Ambient Temperature"
+          title={t('temperature')}
           value={weatherData?.temperature !== undefined ? weatherData.temperature : 28}
           unit="°C"
           icon="🌡️"
@@ -96,91 +98,91 @@ const Dashboard = () => {
           subtitle={weatherData?.source || 'Open-Meteo Live'}
         />
         <MetricCard
-          title="Soil Moisture"
+          title={t('soilMoisture')}
           value={soilData?.moisture !== undefined ? soilData.moisture : 38.5}
           unit="%"
           icon="💧"
           trend="up"
-          subtitle={activeLocation.soilType || "Topsoil Layer (0-5cm)"}
+          subtitle={activeLocation.soilType || "Topsoil Layer"}
         />
         <MetricCard
-          title="Crop Health"
-          value="Healthy"
+          title={t('cropHealth')}
+          value={language === 'mr' ? 'उत्तम' : language === 'hi' ? 'स्वस्थ' : 'Healthy'}
           icon="🌾"
           trend="up"
           subtitle="NDVI Index 0.72 (Sentinel-2)"
         />
         <MetricCard
-          title="Weather Risk"
-          value={weatherData?.signals?.length > 0 ? "Moderate" : "Low"}
-          icon="⚠️"
-          trend={weatherData?.signals?.length > 0 ? "down" : "stable"}
-          subtitle={`Primary APMC: ${activeLocation.apmcMandi}`}
+          title={language === 'mr' ? 'बाजार समिती' : language === 'hi' ? 'प्राथमिक मंडी' : 'Primary APMC'}
+          value={activeLocation.apmcMandi || "APMC"}
+          icon="💰"
+          trend="stable"
+          subtitle={`${activeLocation.district} Mandi`}
         />
       </div>
 
       {/* 8 Core Modules Grid */}
       <div style={{ marginBottom: '1.5rem' }}>
         <h2 style={{ fontSize: '1.35rem', color: 'var(--primary-900)', marginBottom: '1rem' }}>
-          Platform Intelligence Modules ({activeLocation.district})
+          {language === 'mr' ? 'प्रमुख कृषी साधने व विभाग' : language === 'hi' ? 'प्रमुख कृषि मॉड्यूल' : 'Platform Intelligence Modules'} ({activeLocation.district})
         </h2>
       </div>
 
       <div className="modules-grid">
         <div className="module-card">
           <div className="module-card-icon">🗺️</div>
-          <h3>1. GIS Dashboard</h3>
-          <p>Interactive spatial layers centered on {activeLocation.name} coordinates and soil contours.</p>
-          <Link to="/dashboard/gis" className="btn btn-outline btn-block">Open GIS Map →</Link>
+          <h3>1. {t('gisDashboard')}</h3>
+          <p>{language === 'mr' ? 'स्थानिक शेतीचे उपग्रह नकाशे, जमिनीची प्रतवारी आणि सिंचन स्तर.' : language === 'hi' ? 'खेतों का नक्शा और उपग्रह आधारित मिट्टी की जांच।' : 'Interactive spatial layers centered on farm coordinates and soil contours.'}</p>
+          <Link to="/dashboard/gis" className="btn btn-outline btn-block">{t('gisDashboard')} →</Link>
         </div>
 
         <div className="module-card">
           <div className="module-card-icon">🌤️</div>
-          <h3>2. Weather Monitoring</h3>
-          <p>Live micrometeorology, 7-day agricultural forecasts, and spray advisories for {activeLocation.district}.</p>
-          <Link to="/dashboard/weather" className="btn btn-outline btn-block">View Weather →</Link>
+          <h3>2. {t('weatherMonitoring')}</h3>
+          <p>{language === 'mr' ? 'थेट स्थानिक हवामान, ७ दिवसांचा अंदाज आणि फवारणी अनुकूलता.' : language === 'hi' ? 'लाइव मौसम, 7-दिवसीय पूर्वानुमान एवं छिड़काव सलाह।' : 'Live micrometeorology, 7-day agricultural forecasts, and spray advisories.'}</p>
+          <Link to="/dashboard/weather" className="btn btn-outline btn-block">{t('weatherMonitoring')} →</Link>
         </div>
 
         <div className="module-card">
           <div className="module-card-icon">🛰️</div>
-          <h3>3. Satellite Monitoring</h3>
-          <p>Sentinel-2 NDVI vegetative vigor index, moisture NDWI, and cropland canopy health.</p>
-          <Link to="/dashboard/satellite" className="btn btn-outline btn-block">View Satellite →</Link>
+          <h3>3. {t('satelliteMonitoring')}</h3>
+          <p>{language === 'mr' ? 'Sentinel-2 उपग्रहाद्वारे NDVI पीक आरोग्य व पर्णसंभार ओलावा.' : language === 'hi' ? 'उपग्रह द्वारा फसल स्वास्थ्य एवं नमी का सटीक विश्लेषण।' : 'Sentinel-2 NDVI vegetative vigor index, moisture NDWI, and cropland canopy health.'}</p>
+          <Link to="/dashboard/satellite" className="btn btn-outline btn-block">{t('satelliteMonitoring')} →</Link>
         </div>
 
         <div className="module-card">
           <div className="module-card-icon">🌱</div>
-          <h3>4. Soil Health</h3>
-          <p>{activeLocation.soilType} chemistry, NPK macronutrients, pH balance, and split fertilizer schedule.</p>
-          <Link to="/dashboard/soil" className="btn btn-outline btn-block">View Soil Health →</Link>
+          <h3>4. {t('soilHealth')}</h3>
+          <p>{language === 'mr' ? 'मातीतील NPK पोषण, सामू (pH) आणि खतांचे संतुलित नियोजन.' : language === 'hi' ? 'मिट्टी के NPK पोषक तत्व, pH मान और संतुलित खाद सिफारिश।' : 'Soil chemistry, NPK macronutrients, pH balance, and split fertilizer schedule.'}</p>
+          <Link to="/dashboard/soil" className="btn btn-outline btn-block">{t('soilHealth')} →</Link>
         </div>
 
         <div className="module-card">
           <div className="module-card-icon">🐛</div>
-          <h3>5. AI Pest Surveillance</h3>
-          <p>AI photo diagnosis for crops ({activeLocation.primaryCrops?.slice(0, 3).join(', ') || 'Onion, Cotton, Vegetables'}).</p>
-          <Link to="/dashboard/pest" className="btn btn-outline btn-block">Detect Pests →</Link>
+          <h3>5. {t('pestSurveillance')}</h3>
+          <p>{language === 'mr' ? 'पानाचा फोटो अपलोड करून एआय रोग निदान व त्वरित उपाय.' : language === 'hi' ? 'पत्ती की फोटो खींचकर एआई रोग पहचान और दवा छिड़काव।' : 'AI photo diagnosis for crops with chemical and organic treatments.'}</p>
+          <Link to="/dashboard/pest" className="btn btn-outline btn-block">{t('pestSurveillance')} →</Link>
         </div>
 
         <div className="module-card">
           <div className="module-card-icon">🏛️</div>
-          <h3>6. Government Schemes</h3>
-          <p>12 verified national & Maharashtra schemes (PM-KISAN, Namo Shetkari, Magel Tyala Shettale).</p>
-          <Link to="/dashboard/schemes" className="btn btn-outline btn-block">Explore Schemes →</Link>
+          <h3>6. {t('govSchemes')}</h3>
+          <p>{language === 'mr' ? 'नमो शेतकरी, पीएम-किसान, मागेल त्याला शेततळे, सौर पंप योजना.' : language === 'hi' ? 'पीएम-किसान, नमो शेतकरी, खेत तालाब एवं सोलर पंप सब्सिडी योजनाएं।' : '12 verified national & Maharashtra schemes with direct application portals.'}</p>
+          <Link to="/dashboard/schemes" className="btn btn-outline btn-block">{t('govSchemes')} →</Link>
         </div>
 
         <div className="module-card">
           <div className="module-card-icon">💰</div>
-          <h3>7. Market Intelligence</h3>
-          <p>Daily mandi commodity rates for {activeLocation.apmcMandi}, shop comparison, and price alerts.</p>
-          <Link to="/dashboard/market" className="btn btn-outline btn-block">Check Prices →</Link>
+          <h3>7. {t('marketIntelligence')}</h3>
+          <p>{language === 'mr' ? 'बाजार समितीचे आजचे भाव आणि कृषी सेवा केंद्रांचे खत-औषध दर.' : language === 'hi' ? 'दैनिक मंडी भाव एवं पास के कृषि स्टोर की मूल्य तुलना।' : 'Daily mandi commodity rates, shop comparison, and price alerts.'}</p>
+          <Link to="/dashboard/market" className="btn btn-outline btn-block">{t('marketIntelligence')} →</Link>
         </div>
 
         <div className="module-card">
           <div className="module-card-icon">📋</div>
-          <h3>8. Farmer Advisory</h3>
-          <p>Targeted decision support combining weather, soil, and market telemetry for {activeLocation.name}.</p>
-          <Link to="/dashboard/advisory" className="btn btn-primary btn-block">View Advisories →</Link>
+          <h3>8. {t('farmerAdvisory')}</h3>
+          <p>{language === 'mr' ? 'हवामान, माती आणि पिकांनुसार तयार केलेला एकात्मिक शेती सल्ला.' : language === 'hi' ? 'मौसम और मिट्टी के आधार पर कृषि वैज्ञानिकों की विशेष सलाह।' : 'Targeted decision support combining weather, soil, and market telemetry.'}</p>
+          <Link to="/dashboard/advisory" className="btn btn-primary btn-block">{t('farmerAdvisory')} →</Link>
         </div>
       </div>
     </DashboardLayout>

@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 
 export default function ProfileModal() {
   const { user, activeLocation, isProfileModalOpen, closeProfileModal, logoutUser, changeActiveLocation, availableLocations } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   if (!isProfileModalOpen) return null;
@@ -110,7 +110,7 @@ export default function ProfileModal() {
 
             <div>
               <div style={{ fontSize: '1.25rem', fontWeight: '800' }}>
-                {user?.name || 'Registered Farmer'}
+                {user?.name || (language === 'mr' ? 'नोंदणीकृत शेतकरी' : language === 'hi' ? 'पंजीकृत किसान' : 'Registered Farmer')}
               </div>
               <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
                 {user?.email || 'farmer@krishisamadhan.in'}
@@ -128,7 +128,7 @@ export default function ProfileModal() {
                   borderRadius: '12px'
                 }}
               >
-                ● {user?.role || 'Farmer'} Account
+                ● {user?.role || 'Farmer'} {language === 'mr' ? 'खाते' : language === 'hi' ? 'खाता' : 'Account'}
               </span>
             </div>
           </div>
@@ -139,7 +139,7 @@ export default function ProfileModal() {
           {/* Active Location Switcher */}
           <div style={{ marginBottom: '1.25rem' }}>
             <label style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '0.4rem' }}>
-              📍 Active Farm Location & Region
+              📍 {language === 'mr' ? 'सक्रिय शेत स्थान व तालुका' : language === 'hi' ? 'सक्रिय खेत स्थान व क्षेत्र' : 'Active Farm Location & Region'}
             </label>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <select
@@ -161,19 +161,19 @@ export default function ProfileModal() {
           <div style={{ background: '#f8fafc', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Coordinates:</span>
+                <span style={{ color: 'var(--text-muted)' }}>{language === 'mr' ? 'अक्षांश/रेखांश:' : 'Coordinates:'}</span>
                 <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{activeLocation.latitude}°N, {activeLocation.longitude}°E</div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Primary APMC:</span>
+                <span style={{ color: 'var(--text-muted)' }}>{language === 'mr' ? 'बाजार समिती:' : 'Primary APMC:'}</span>
                 <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{activeLocation.apmcMandi || 'Local APMC'}</div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Soil Type:</span>
+                <span style={{ color: 'var(--text-muted)' }}>{language === 'mr' ? 'माती प्रकार:' : 'Soil Type:'}</span>
                 <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{activeLocation.soilType || 'Vertisol'}</div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Key Crops:</span>
+                <span style={{ color: 'var(--text-muted)' }}>{language === 'mr' ? 'प्रमुख पिके:' : 'Key Crops:'}</span>
                 <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{activeLocation.primaryCrops?.slice(0, 2).join(', ') || 'Onion, Wheat'}</div>
               </div>
             </div>
@@ -182,7 +182,7 @@ export default function ProfileModal() {
           {/* Quick Action Navigation */}
           <div style={{ marginBottom: '1.25rem' }}>
             <div style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
-              ⚡ Quick Services for {activeLocation.district || 'Your Area'}
+              ⚡ {language === 'mr' ? `${activeLocation.district} साठी जलद दुवे` : `Quick Services for ${activeLocation.district || 'Your Area'}`}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
               <button
@@ -190,28 +190,28 @@ export default function ProfileModal() {
                 className="btn btn-outline btn-sm"
                 style={{ justifyContent: 'center', fontSize: '0.82rem' }}
               >
-                🌦️ Live Weather
+                🌦️ {t('weatherMonitoring')}
               </button>
               <button
                 onClick={() => handleNavigate('/dashboard/market')}
                 className="btn btn-outline btn-sm"
                 style={{ justifyContent: 'center', fontSize: '0.82rem' }}
               >
-                💰 Mandi Rates
+                💰 {t('marketIntelligence')}
               </button>
               <button
                 onClick={() => handleNavigate('/dashboard/soil')}
                 className="btn btn-outline btn-sm"
                 style={{ justifyContent: 'center', fontSize: '0.82rem' }}
               >
-                🌱 Soil Health
+                🌱 {t('soilHealth')}
               </button>
               <button
                 onClick={() => handleNavigate('/dashboard/advisory')}
                 className="btn btn-outline btn-sm"
                 style={{ justifyContent: 'center', fontSize: '0.82rem' }}
               >
-                📋 Farm Advisories
+                📋 {t('farmerAdvisory')}
               </button>
             </div>
           </div>
@@ -223,14 +223,14 @@ export default function ProfileModal() {
               className="btn btn-sm"
               style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', fontWeight: '700' }}
             >
-              🚪 Sign Out
+              🚪 {t('logout')}
             </button>
 
             <button
               onClick={closeProfileModal}
               className="btn btn-primary btn-sm"
             >
-              Done
+              {language === 'mr' ? 'पूर्ण झाले' : language === 'hi' ? 'हो गया' : 'Done'}
             </button>
           </div>
         </div>

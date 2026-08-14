@@ -7,9 +7,11 @@ import SourceBadge from '../components/SourceBadge';
 import marketService from '../services/marketService';
 import inputStoreService from '../services/inputStoreService';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 const Market = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { activeLocation } = useAuth();
   const [activeTab, setActiveTab] = useState('mandi'); // 'mandi' | 'seeds' | 'pesticides' | 'fertilizers'
 
   // APMC Mandi State
@@ -29,21 +31,21 @@ const Market = () => {
   const [selectedLocality, setSelectedLocality] = useState('All');
 
   const commodities = [
-    { id: 'onion', label: 'Onion (कांदा / प्याज)' },
-    { id: 'wheat', label: 'Wheat (गहू / गेहूं)' },
-    { id: 'pomegranate', label: 'Pomegranate (डाळिंब / अनार)' },
-    { id: 'grapes', label: 'Grapes (द्राक्षे / अंगूर)' },
-    { id: 'soybean', label: 'Soybean (सोयाबीन)' },
-    { id: 'cotton', label: 'Cotton (कापूस / कपास)' },
-    { id: 'tomato', label: 'Tomato (टोमॅटो / टमाटर)' },
-    { id: 'sugarcane', label: 'Sugarcane (ऊस / गन्ना)' },
-    { id: 'jowar', label: 'Jowar (ज्वारी / ज्वार)' },
-    { id: 'bajra', label: 'Bajra (बाजरी / बाजरा)' },
-    { id: 'tur', label: 'Tur / Arhar (तूर / अरहर)' }
+    { id: 'onion', label: language === 'mr' ? 'कांदा (Onion)' : language === 'hi' ? 'प्याज (Onion)' : 'Onion (कांदा)' },
+    { id: 'wheat', label: language === 'mr' ? 'गहू (Wheat)' : language === 'hi' ? 'गेहूं (Wheat)' : 'Wheat (गहू)' },
+    { id: 'pomegranate', label: language === 'mr' ? 'डाळिंब (Pomegranate)' : language === 'hi' ? 'अनार (Pomegranate)' : 'Pomegranate (डाळिंब)' },
+    { id: 'grapes', label: language === 'mr' ? 'द्राक्षे (Grapes)' : language === 'hi' ? 'अंगूर (Grapes)' : 'Grapes (द्राक्षे)' },
+    { id: 'soybean', label: language === 'mr' ? 'सोयाबीन (Soybean)' : language === 'hi' ? 'सोयाबीन (Soybean)' : 'Soybean (सोयाबीन)' },
+    { id: 'cotton', label: language === 'mr' ? 'कापूस (Cotton)' : language === 'hi' ? 'कपास (Cotton)' : 'Cotton (कापूस)' },
+    { id: 'tomato', label: language === 'mr' ? 'टोमॅटो (Tomato)' : language === 'hi' ? 'टमाटर (Tomato)' : 'Tomato (टोमॅटो)' },
+    { id: 'sugarcane', label: language === 'mr' ? 'ऊस (Sugarcane)' : language === 'hi' ? 'गन्ना (Sugarcane)' : 'Sugarcane (ऊस)' },
+    { id: 'jowar', label: language === 'mr' ? 'ज्वारी (Jowar)' : language === 'hi' ? 'ज्वार (Jowar)' : 'Jowar (ज्वारी)' },
+    { id: 'bajra', label: language === 'mr' ? 'बाजरी (Bajra)' : language === 'hi' ? 'बाजरा (Bajra)' : 'Bajra (बाजरी)' },
+    { id: 'tur', label: language === 'mr' ? 'तूर (Tur/Arhar)' : language === 'hi' ? 'अरहर (Tur/Arhar)' : 'Tur / Arhar (तूर)' }
   ];
 
-  const localMandis = ['All', 'Nashik', 'Sangamner', 'Kopargaon', 'Sinnar', 'Shirdi', 'Rahata', 'Yeola', 'Rahuri', 'Niphad'];
-  const districts = ['All', 'Ahmednagar', 'Nashik', 'Pune', 'Solapur'];
+  const localMandis = ['All', 'Nashik', 'Sangamner', 'Kopargaon', 'Sinnar', 'Shirdi', 'Rahata', 'Yeola', 'Pune', 'Solapur', 'Kolhapur', 'Nagpur', 'Jalgaon'];
+  const districts = ['All', 'Ahmednagar', 'Nashik', 'Pune', 'Solapur', 'Kolhapur', 'Nagpur', 'Jalgaon'];
 
   // Fetch Mandi Rates
   const fetchMarketData = async () => {
@@ -93,19 +95,19 @@ const Market = () => {
   const mandiColumns = [
     {
       key: 'market',
-      label: 'APMC Mandi / Market',
+      label: language === 'mr' ? 'कृषी उत्पन्न बाजार समिती (मंडी)' : language === 'hi' ? 'कृषि उपज मंडी (APMC)' : 'APMC Mandi / Market',
       render: (val, row) => (
         <div>
           <strong style={{ color: 'var(--primary-900)', fontSize: '0.98rem' }}>📍 {val} APMC</strong>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            Dist: <strong>{row.district}</strong>, {row.state}
+            {language === 'mr' ? 'जिल्हा:' : language === 'hi' ? 'जिला:' : 'Dist:'} <strong>{row.district}</strong>, {row.state}
           </div>
         </div>
       )
     },
     {
       key: 'commodity',
-      label: 'Commodity',
+      label: language === 'mr' ? 'शेतमाल' : language === 'hi' ? 'फसल' : 'Commodity',
       render: (val) => (
         <span className="badge badge-info" style={{ textTransform: 'capitalize' }}>
           {val}
@@ -114,17 +116,17 @@ const Market = () => {
     },
     {
       key: 'min_price',
-      label: 'Min Price',
+      label: t('minPrice'),
       render: (val) => <span style={{ color: 'var(--text-secondary)' }}>₹{val} / qtl</span>
     },
     {
       key: 'max_price',
-      label: 'Max Price',
+      label: t('maxPrice'),
       render: (val) => <span style={{ color: 'var(--text-secondary)' }}>₹{val} / qtl</span>
     },
     {
       key: 'modal_price',
-      label: 'Modal Price (₹/qtl)',
+      label: `${t('modalPrice')} (₹/qtl)`,
       render: (val) => (
         <strong style={{ color: 'var(--primary-700)', fontSize: '1.15rem' }}>
           ₹{val}
@@ -133,17 +135,16 @@ const Market = () => {
     },
     {
       key: 'arrival_quantity',
-      label: 'Daily Arrival Volume',
+      label: language === 'mr' ? 'दैनिक आवक' : language === 'hi' ? 'दैनिक आवक' : 'Daily Arrival Volume',
       render: (val) => <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>📦 {val || '250 Quintals'}</span>
     },
     {
       key: 'price_date',
-      label: 'Date',
+      label: language === 'mr' ? 'दिनांक' : language === 'hi' ? 'दिनांक' : 'Date',
       render: (val, row) => val || row.arrival_date || new Date().toISOString().split('T')[0]
     }
   ];
 
-  // Comparisons for Mandi
   const highestMandi = mandiData.length > 0 ? mandiData.reduce((max, p) => (p.modal_price > max.modal_price ? p : max), mandiData[0]) : null;
   const lowestMandi = mandiData.length > 0 ? mandiData.reduce((min, p) => (p.modal_price < min.modal_price ? p : min), mandiData[0]) : null;
   const priceDiff = highestMandi && lowestMandi ? highestMandi.modal_price - lowestMandi.modal_price : 0;
@@ -153,10 +154,10 @@ const Market = () => {
       <div className="page-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h1>{t('marketIntelligence')} & Local Shop Prices</h1>
-            <p>Live APMC mandi rates, seeds, pesticides & fertilizer price comparisons across Nashik, Sangamner, Kopargaon, Sinnar, Shirdi, Rahata & Yeola.</p>
+            <h1>{t('marketTitle')}</h1>
+            <p>{t('marketDesc')}</p>
           </div>
-          <SourceBadge source="AGMARKNET & Verified Local Krishi Seva Kendras" status="Live Locality Rates" />
+          <SourceBadge source="AGMARKNET & Verified Krishi Seva Kendras" status="Live Locality Rates" />
         </div>
       </div>
 
@@ -166,25 +167,25 @@ const Market = () => {
           className={`btn ${activeTab === 'mandi' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setActiveTab('mandi')}
         >
-          📊 APMC Mandi Crop Rates
+          📊 {t('apmcRates')}
         </button>
         <button
           className={`btn ${activeTab === 'seeds' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setActiveTab('seeds')}
         >
-          🌱 Seeds & Hybrids (Shop Prices)
+          🌱 {t('seeds')} ({t('priceComparison')})
         </button>
         <button
           className={`btn ${activeTab === 'pesticides' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setActiveTab('pesticides')}
         >
-          🧪 Pesticides & Spray (Shop Prices)
+          🧪 {t('pesticides')} ({t('priceComparison')})
         </button>
         <button
           className={`btn ${activeTab === 'fertilizers' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setActiveTab('fertilizers')}
         >
-          ⚡ Fertilizer Bag Rates & MRP
+          ⚡ {t('fertilizers')} ({t('priceComparison')})
         </button>
       </div>
 
@@ -196,7 +197,7 @@ const Market = () => {
           {/* Locality Quick Chips */}
           <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
             <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary-900)', marginBottom: '0.6rem' }}>
-              📍 Select Nearby Locality APMC Mandi:
+              📍 {language === 'mr' ? 'स्थानिक बाजार समिती निवडा:' : language === 'hi' ? 'स्थानीय मंडी चुनें:' : 'Select Nearby Locality APMC Mandi:'}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
               {localMandis.map((mandi) => (
@@ -206,7 +207,7 @@ const Market = () => {
                   className={`btn btn-sm ${selectedMandi === mandi ? 'btn-primary' : 'btn-outline'}`}
                   style={{ borderRadius: 'var(--radius-pill)', padding: '0.35rem 0.85rem' }}
                 >
-                  {mandi === 'All' ? '🌐 All Nearby Mandis' : `🏛️ ${mandi}`}
+                  {mandi === 'All' ? (language === 'mr' ? '🌐 सर्व नजीकच्या मंड्या' : language === 'hi' ? '🌐 सभी मंडियां' : '🌐 All Nearby Mandis') : `🏛️ ${mandi}`}
                 </button>
               ))}
             </div>
@@ -216,7 +217,7 @@ const Market = () => {
           <div className="card" style={{ marginBottom: '1.75rem', padding: '1.25rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">🌾 Target Crop / Commodity</label>
+                <label className="form-label">🌾 {language === 'mr' ? 'शेतमाल निवडा' : language === 'hi' ? 'फसल चुनें' : 'Target Crop / Commodity'}</label>
                 <select
                   className="form-select"
                   value={commodity}
@@ -227,7 +228,7 @@ const Market = () => {
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">📍 District Filter</label>
+                <label className="form-label">📍 {language === 'mr' ? 'जिल्हा' : language === 'hi' ? 'जिला फ़िल्टर' : 'District Filter'}</label>
                 <select
                   className="form-select"
                   value={district}
@@ -236,18 +237,18 @@ const Market = () => {
                     setSelectedMandi('All');
                   }}
                 >
-                  {districts.map(d => <option key={d} value={d}>{d === 'All' ? 'All Districts (Ahmednagar + Nashik)' : `${d} District`}</option>)}
+                  {districts.map(d => <option key={d} value={d}>{d === 'All' ? (language === 'mr' ? 'सर्व जिल्हे' : language === 'hi' ? 'सभी जिले' : 'All Districts') : `${d} District`}</option>)}
                 </select>
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">🏛️ Specific APMC Market</label>
+                <label className="form-label">🏛️ {language === 'mr' ? 'विशिष्ट बाजार समिती' : language === 'hi' ? 'विशिष्ट मंडी' : 'Specific APMC Market'}</label>
                 <select
                   className="form-select"
                   value={selectedMandi}
                   onChange={(e) => setSelectedMandi(e.target.value)}
                 >
-                  {localMandis.map(m => <option key={m} value={m}>{m === 'All' ? 'All Local APMCs' : `${m} APMC`}</option>)}
+                  {localMandis.map(m => <option key={m} value={m}>{m === 'All' ? (language === 'mr' ? 'सर्व स्थानिक बाजार समित्या' : language === 'hi' ? 'सभी स्थानीय मंडियां' : 'All Local APMCs') : `${m} APMC`}</option>)}
                 </select>
               </div>
             </div>
@@ -257,32 +258,38 @@ const Market = () => {
           {highestMandi && lowestMandi && mandiData.length > 1 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
               <div className="card" style={{ borderLeft: '5px solid #10b981', background: '#fafdfb' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Highest Local Modal Rate</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                  {language === 'mr' ? 'कमाल सरासरी दर' : language === 'hi' ? 'उच्चतम औसत भाव' : 'Highest Local Modal Rate'}
+                </div>
                 <div style={{ fontSize: '1.85rem', fontWeight: '800', color: '#10b981', margin: '0.2rem 0' }}>
                   ₹{highestMandi.modal_price} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/ qtl</span>
                 </div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  <strong>📍 {highestMandi.market} APMC</strong> ({highestMandi.district} Dist)
+                  <strong>📍 {highestMandi.market} APMC</strong> ({highestMandi.district})
                 </div>
               </div>
 
               <div className="card" style={{ borderLeft: '5px solid #ef4444', background: '#fdfbfa' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Lowest Local Modal Rate</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                  {language === 'mr' ? 'किमान सरासरी दर' : language === 'hi' ? 'न्यूनतम औसत भाव' : 'Lowest Local Modal Rate'}
+                </div>
                 <div style={{ fontSize: '1.85rem', fontWeight: '800', color: '#ef4444', margin: '0.2rem 0' }}>
                   ₹{lowestMandi.modal_price} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/ qtl</span>
                 </div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  <strong>📍 {lowestMandi.market} APMC</strong> ({lowestMandi.district} Dist)
+                  <strong>📍 {lowestMandi.market} APMC</strong> ({lowestMandi.district})
                 </div>
               </div>
 
               <div className="card" style={{ borderLeft: '5px solid #3b82f6', background: '#f8faff' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Inter-Mandi Arbitrage Spread</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                  {language === 'mr' ? 'दरांमधील फरक (नफा संधी)' : language === 'hi' ? 'भाव में अंतर (लाभ अवसर)' : 'Inter-Mandi Arbitrage Spread'}
+                </div>
                 <div style={{ fontSize: '1.85rem', fontWeight: '800', color: '#3b82f6', margin: '0.2rem 0' }}>
                   +₹{priceDiff} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/ qtl</span>
                 </div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  Compare transport from {lowestMandi.market} to {highestMandi.market}.
+                  {lowestMandi.market} {language === 'mr' ? 'पेक्षा' : 'to'} {highestMandi.market} {language === 'mr' ? 'मध्ये जास्त दर मिळतो.' : 'offers higher realization.'}
                 </div>
               </div>
             </div>
@@ -291,12 +298,12 @@ const Market = () => {
           {/* Mandi Table */}
           <div className="card">
             <div className="card-header">
-              <h2>📊 APMC Mandi Price Records: {commodity.toUpperCase()}</h2>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{mandiData.length} APMC Mandis Active</span>
+              <h2>📊 {t('apmcRates')}: {commodity.toUpperCase()}</h2>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{mandiData.length} {language === 'mr' ? 'बाजार समित्या' : 'APMC Mandis'}</span>
             </div>
 
             {mandiLoading ? (
-              <LoadingState message="Fetching live APMC mandi rates for Nashik, Sangamner, Kopargaon, Sinnar, Shirdi, Rahata & Yeola..." />
+              <LoadingState message={`${t('loadingMsg')} (${commodity})...`} />
             ) : mandiError ? (
               <ErrorState message={mandiError} onRetry={fetchMarketData} />
             ) : (
@@ -319,7 +326,7 @@ const Market = () => {
           <div className="card" style={{ marginBottom: '1.75rem', padding: '1.25rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">📍 Filter by Locality / Town</label>
+                <label className="form-label">📍 {language === 'mr' ? 'शहर / तालुका फिल्टर' : language === 'hi' ? 'शहर / स्थान फ़िल्टर' : 'Filter by Locality / Town'}</label>
                 <select
                   className="form-select"
                   value={selectedLocality}
@@ -327,18 +334,18 @@ const Market = () => {
                 >
                   {localMandis.map(m => (
                     <option key={m} value={m}>
-                      {m === 'All' ? '🌐 All Shops (Nashik, Sangamner, Kopargaon, Sinnar, Shirdi, Rahata, Yeola)' : `🏪 ${m} Outlets`}
+                      {m === 'All' ? (language === 'mr' ? '🌐 सर्व दुकाने (महाराष्ट्र)' : language === 'hi' ? '🌐 सभी दुकानें' : '🌐 All Shops') : `🏪 ${m} Outlets`}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">🔍 Search Brand / Item</label>
+                <label className="form-label">🔍 {language === 'mr' ? 'ब्रँड किंवा औषध शोधा' : language === 'hi' ? 'ब्रांड या दवा खोजें' : 'Search Brand / Item'}</label>
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="e.g. Cotton, Onion, Coragen, Urea, Syngenta..."
+                  placeholder={language === 'mr' ? 'उदा. कांदा, कापूस, कोराजन, युरिया...' : 'e.g. Cotton, Onion, Coragen, Urea, Syngenta...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -348,14 +355,14 @@ const Market = () => {
 
           {/* Cards Display */}
           {inputLoading ? (
-            <LoadingState message={`Fetching local shop prices for ${activeTab}...`} />
+            <LoadingState message={`${t('loadingMsg')}...`} />
           ) : inputError ? (
             <ErrorState message={inputError} onRetry={fetchInputStores} />
           ) : inputData.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '3.5rem 1.5rem' }}>
               <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🏪</div>
-              <h3>No input items matching search criteria</h3>
-              <p style={{ color: 'var(--text-muted)' }}>Try choosing "All Outlets" or clearing your search query.</p>
+              <h3>{language === 'mr' ? 'कोणतीही नोंद आढळली नाही' : language === 'hi' ? 'कोई उत्पाद नहीं मिला' : 'No input items matching search criteria'}</h3>
+              <p style={{ color: 'var(--text-muted)' }}>{language === 'mr' ? 'कृपया शोध शब्द बदलून पहा.' : 'Try choosing "All Outlets" or clearing your search query.'}</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -364,13 +371,13 @@ const Market = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.85rem' }}>
                     <div>
                       <span className="badge badge-info" style={{ marginBottom: '0.35rem' }}>
-                        {item.crop ? `Crop: ${item.crop}` : item.category.toUpperCase()}
+                        {item.crop ? `${language === 'mr' ? 'पीक:' : 'Crop:'} ${item.crop}` : item.category.toUpperCase()}
                       </span>
                       <h2 style={{ fontSize: '1.25rem', color: 'var(--primary-900)', margin: '0.2rem 0' }}>
                         {item.variety || item.name}
                       </h2>
                       <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-                        <strong>Brand / Mfg:</strong> {item.brand} | <strong>Pack Size:</strong> {item.packSize}
+                        <strong>{language === 'mr' ? 'कंपनी / ब्रँड:' : 'Brand / Mfg:'}</strong> {item.brand} | <strong>{language === 'mr' ? 'पॅकिंग:' : 'Pack Size:'}</strong> {item.packSize}
                       </div>
                     </div>
 
@@ -379,7 +386,7 @@ const Market = () => {
                         ₹{item.avgPrice || item.mrp}
                       </div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        {item.mrp ? 'Govt Fixed MRP' : 'Avg Local Retail Price'}
+                        {item.mrp ? (language === 'mr' ? 'शासकीय कमाल किंमत (MRP)' : 'Govt Fixed MRP') : (language === 'mr' ? 'सरासरी स्थानिक किरकोळ दर' : 'Avg Local Retail Price')}
                       </div>
                     </div>
                   </div>
@@ -387,7 +394,7 @@ const Market = () => {
                   {/* Shop Price Comparison Grid */}
                   <h4 style={{ fontSize: '0.9rem', color: 'var(--primary-900)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span>🏬</span>
-                    <span>Local Shop Prices & Stock Availability:</span>
+                    <span>{t('priceComparison')} & {language === 'mr' ? 'उपलब्ध साठा:' : 'Stock Availability:'}</span>
                   </h4>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.85rem' }}>
@@ -420,7 +427,7 @@ const Market = () => {
                           <span style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--primary-800)' }}>
                             ₹{shop.price}
                           </span>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Per Unit</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{language === 'mr' ? 'प्रति नग' : 'Per Unit'}</div>
                         </div>
                       </div>
                     ))}
