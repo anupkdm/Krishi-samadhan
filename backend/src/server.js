@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" })); // To allow loading images
 
-// Enable flexible CORS for local development and deployed domains (Vercel, Render, Netlify)
+// Enable flexible CORS for local development, local Wi-Fi / multi-device network, and deployed domains
 app.use(cors({
     origin: true, // Automatically reflect request origin
     credentials: true
@@ -32,7 +32,7 @@ app.use('/api/', limiter);
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Health check endpoint for Render/Vercel
+// Health check endpoint for multi-device & cloud verification
 app.get('/api/health', (req, res) => {
     res.json({ status: 'healthy', name: 'Krishi Samadhan API', timestamp: new Date().toISOString() });
 });
@@ -68,8 +68,9 @@ async function startServer() {
     try {
         await getDb(); // Initialize database
         console.log('Database initialized.');
-        app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
+        // Bind to 0.0.0.0 to allow access from other devices on the same Wi-Fi / Local Network
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`Server running on http://0.0.0.0:${PORT}`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);
