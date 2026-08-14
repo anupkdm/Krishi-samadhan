@@ -1,0 +1,33 @@
+services:
+  # 1. Backend Web Service (Node.js + Express)
+  - type: web
+    name: krishi-samadhan-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+
+  # 2. Frontend Static Site (React + Vite)
+  - type: web
+    name: krishi-samadhan-frontend
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: krishi-samadhan-backend
+          type: web
+          property: host

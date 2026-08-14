@@ -14,17 +14,28 @@ const PORT = process.env.PORT || 5000;
 
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" })); // To allow loading images
-app.use(cors({ origin: 'http://localhost:5173' }));
+
+// Enable flexible CORS for local development and deployed domains (Vercel, Render, Netlify)
+app.use(cors({
+    origin: true, // Automatically reflect request origin
+    credentials: true
+}));
+
 app.use(express.json({ limit: '10mb' }));
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 300,
+    max: 500,
     message: 'Too many requests, please try again later.'
 });
 app.use('/api/', limiter);
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Health check endpoint for Render/Vercel
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'healthy', name: 'Krishi Samadhan API', timestamp: new Date().toISOString() });
+});
 
 // Routes
 const authRoutes = require('./routes/auth');
