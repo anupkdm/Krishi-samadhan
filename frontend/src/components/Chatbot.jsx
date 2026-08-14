@@ -1,21 +1,55 @@
 import React, { useState, useEffect, useRef } from 'react';
 import chatbotService from '../services/chatbotService';
-import DEFAULT_LOCATION from '../config/locations';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Chatbot() {
   const { t, language } = useLanguage();
+  const { user, activeLocation } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeakingId, setIsSpeakingId] = useState(null);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const recognitionRef = useRef(null);
 
-  // Initialize or update initial greeting when language changes
+  // Initialize Web Speech API for voice recognition if available
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'en-IN';
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setInput(transcript);
+          handleSend(transcript);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, [language]);
+
+  // Initial greeting
   useEffect(() => {
     setMessages([
       {
@@ -56,14 +90,16 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      const lat = DEFAULT_LOCATION.latitude || DEFAULT_LOCATION.lat || 19.8833;
-      const lon = DEFAULT_LOCATION.longitude || DEFAULT_LOCATION.lon || 74.4833;
-      const response = await chatbotService.sendMessage(query, { lat, lon, language });
+      const response = await chatbotService.sendMessage(query, {
+        location: activeLocation,
+        language,
+        user
+      });
 
       const botMsg = {
         id: 'bot-' + Date.now(),
         sender: 'bot',
-        text: response.reply || (language === 'mr' ? "सध्या ही माहिती उपलब्ध होऊ शकली नाही. कृपया पुन्हा प्रयत्न करा." : language === 'hi' ? "यह जानकारी वर्तमान में उपलब्ध नहीं है। कृपया पुनः प्रयास करें।" : "I couldn't process that request right now. Please try again."),
+        text: response.reply,
         suggestions: response.suggestions || [t('sugWeather'), t('sugSoil'), t('sugMandi')],
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -75,7 +111,11 @@ export default function Chatbot() {
       const errorMsg = {
         id: 'bot-err-' + Date.now(),
         sender: 'bot',
-        text: language === 'mr' ? "⚠️ सर्व्हरशी संपर्क साधताना अडचण आली. कृपया बॅकएंड चालू असल्याची खात्री करा." : language === 'hi' ? "⚠️ सर्वर से कनेक्ट करने में समस्या आई। कृपया सुनिश्चित करें कि बैकएंड चालू है।" : "⚠️ Sorry, I had trouble connecting to the advisory server. Please ensure the backend is running.",
+        text: language === 'mr'
+          ? "⚠️ दिलगीर आहोत, माहिती मिळवताना अडचण आली. कृपया पुन्हा प्रयत्न करा."
+          : language === 'hi'
+          ? "⚠️ क्षमा करें, जानकारी प्राप्त करने में समस्या आई। कृपया पुनः प्रयास करें।"
+          : "⚠️ Sorry, I encountered an issue retrieving that information. Please try again.",
         suggestions: [t('sugWeather'), t('sugSoil')],
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -83,6 +123,49 @@ export default function Chatbot() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleToggleVoice = () => {
+    if (!recognitionRef.current) {
+      alert(language === 'mr' ? 'आपल्या ब्राउझरमध्ये व्हॉइस इनपुट उपलब्ध नाही.' : 'Voice recognition is not supported in this browser.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.lang = language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'en-IN';
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch {
+        setIsListening(false);
+      }
+    }
+  };
+
+  const handleSpeak = (msgId, text) => {
+    if (!('speechSynthesis' in window)) return;
+
+    if (isSpeakingId === msgId) {
+      window.speechSynthesis.cancel();
+      setIsSpeakingId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    // Clean markdown symbols for cleaner voice
+    const cleanText = text.replace(/[*#_•\n]/g, ' ').replace(/\s+/g, ' ').trim();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'en-IN';
+    utterance.rate = 0.95;
+
+    utterance.onend = () => setIsSpeakingId(null);
+    utterance.onerror = () => setIsSpeakingId(null);
+
+    setIsSpeakingId(msgId);
+    window.speechSynthesis.speak(utterance);
   };
 
   const handleKeyDown = (e) => {
@@ -93,6 +176,8 @@ export default function Chatbot() {
   };
 
   const handleClear = () => {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    setIsSpeakingId(null);
     setMessages([
       {
         id: 'init-reset-' + Date.now(),
@@ -130,11 +215,14 @@ export default function Chatbot() {
               <img
                 src="/logo.png"
                 alt="Krishi AI"
-                style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'contain', background: '#fff', padding: '1px' }}
+                style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'contain', background: '#fff', padding: '1px' }}
               />
               <div>
-                <div style={{ fontWeight: '700', fontSize: '0.95rem', color: '#ffffff', lineHeight: 1.2 }}>
-                  {t('chatTitle')}
+                <div style={{ fontWeight: '700', fontSize: '0.95rem', color: '#ffffff', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span>{t('chatTitle')}</span>
+                  <span style={{ fontSize: '0.68rem', background: 'rgba(255,255,255,0.25)', padding: '0.1rem 0.4rem', borderRadius: '10px' }}>
+                    {activeLocation.district}
+                  </span>
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span className="status-dot-online"></span>
@@ -154,7 +242,10 @@ export default function Chatbot() {
               </button>
               <button
                 className="chatbot-header-btn"
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                  setIsOpen(false);
+                }}
                 title="Minimize Chat"
                 aria-label="Minimize Chat"
               >
@@ -167,8 +258,33 @@ export default function Chatbot() {
           <div className="chatbot-messages">
             {messages.map((msg) => (
               <div key={msg.id} className={`chat-message ${msg.sender}`}>
-                <div className="message-bubble">
+                <div className="message-bubble" style={{ position: 'relative' }}>
                   {msg.sender === 'bot' ? formatBotMessage(msg.text) : msg.text}
+
+                  {/* Audio Speech Readout Button on Bot Messages */}
+                  {msg.sender === 'bot' && (
+                    <button
+                      onClick={() => handleSpeak(msg.id, msg.text)}
+                      style={{
+                        position: 'absolute',
+                        top: '6px',
+                        right: '6px',
+                        background: 'rgba(0,0,0,0.04)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '24px',
+                        height: '24px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.75rem'
+                      }}
+                      title="Listen to response (Audio Readout)"
+                    >
+                      {isSpeakingId === msg.id ? '⏹️' : '🔊'}
+                    </button>
+                  )}
                 </div>
                 <span className="message-time">{msg.time}</span>
 
@@ -202,23 +318,48 @@ export default function Chatbot() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Form */}
-          <div className="chatbot-input-area">
+          {/* Input Form with Voice Support */}
+          <div className="chatbot-input-area" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.75rem' }}>
+            <button
+              onClick={handleToggleVoice}
+              style={{
+                background: isListening ? '#ef4444' : 'var(--primary-50)',
+                border: '1px solid ' + (isListening ? '#dc2626' : 'var(--primary-200)'),
+                color: isListening ? '#ffffff' : 'var(--primary-800)',
+                borderRadius: '50%',
+                width: '38px',
+                height: '38px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                fontSize: '1rem',
+                transition: 'all 0.2s'
+              }}
+              title={isListening ? "Listening... Speak now!" : "Voice Input (Speak your question)"}
+            >
+              {isListening ? '🔴' : '🎙️'}
+            </button>
+
             <input
               ref={inputRef}
               type="text"
               className="chatbot-input"
-              placeholder={t('chatPlaceholder')}
+              placeholder={isListening ? (language === 'mr' ? "मी ऐकत आहे, बोला..." : language === 'hi' ? "मैं सुन रहा हूँ, बोलिए..." : "Listening, speak now...") : t('chatPlaceholder')}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={loading}
+              style={{ flex: 1 }}
             />
+
             <button
               className="chatbot-send-btn"
               onClick={() => handleSend()}
               disabled={!input.trim() || loading}
               aria-label="Send message"
+              style={{ flexShrink: 0 }}
             >
               ➔
             </button>
