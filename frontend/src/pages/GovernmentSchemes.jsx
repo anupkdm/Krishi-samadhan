@@ -22,7 +22,8 @@ const GovernmentSchemes = () => {
         search || undefined,
         category !== 'All' ? category : undefined
       );
-      setSchemes(response?.schemes || []);
+      const schemeList = response?.records || response?.schemes || (Array.isArray(response) ? response : []);
+      setSchemes(schemeList);
     } catch (err) {
       console.error('Schemes fetch error:', err);
       setError('Failed to load government schemes repository.');
@@ -46,14 +47,14 @@ const GovernmentSchemes = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1>Government Agricultural Schemes</h1>
-            <p>Verified central and state agricultural support programs, financial subsidies, and credit facilities.</p>
+            <p>Verified Central and Maharashtra State agricultural support programs, financial subsidies, and credit facilities.</p>
           </div>
-          <SourceBadge source="Ministry of Agriculture & FW" status="Verified Portal Data" />
+          <SourceBadge source="Ministry of Agriculture & MahaDBT" status="Verified Portal Data" />
         </div>
       </div>
 
       <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: 'var(--radius-md)', padding: '0.9rem 1.25rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+        <span style={{ fontSize: '1.25rem' }}>ℹ️</span>
         <span style={{ fontSize: '0.88rem', color: '#b45309' }}>
           <strong>Official Advisory:</strong> Always verify current eligibility, documentation criteria, and application deadlines on the respective official ministry portals before applying.
         </span>
@@ -66,7 +67,7 @@ const GovernmentSchemes = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="Search by scheme name or benefit (e.g. Kisan, Solar, Insurance)..."
+              placeholder="Search by scheme name or benefit (e.g. Kisan, Solar, Drip, Tractor, Insurance)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
