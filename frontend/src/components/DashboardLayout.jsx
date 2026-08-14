@@ -27,15 +27,15 @@ export default function DashboardLayout({ children }) {
 
       {/* Main Content Area */}
       <div className="dashboard-main-wrapper">
-        {/* Desktop / Tablet Top Action Header with Language Switcher */}
-        <header className="dashboard-top-bar" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '0.75rem 2.5rem 0', background: 'transparent' }}>
+        {/* Desktop / Tablet Top Action Header (Hidden on Mobile) */}
+        <header className="dashboard-top-bar desktop-only" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '0.75rem 2.5rem 0', background: 'transparent' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <span style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--text-muted)' }}>🌐 Language:</span>
             <LanguageSelector />
           </div>
         </header>
 
-        {/* Mobile Top App Bar */}
+        {/* Mobile Top App Bar (Only on Mobile screens) */}
         <header className="dashboard-mobile-header mobile-only">
           <button
             className="mobile-header-menu-btn"
@@ -48,7 +48,7 @@ export default function DashboardLayout({ children }) {
           <Link to="/" className="mobile-header-brand">
             <img
               src="/logo.png"
-              alt="Agri Samadhan"
+              alt="Krishi Samadhan"
               style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'contain' }}
             />
             <span style={{ fontWeight: '800', fontSize: '0.95rem', color: 'var(--primary-900)' }}>
