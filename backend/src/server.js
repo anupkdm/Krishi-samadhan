@@ -24,6 +24,16 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 
+// Lazy ensure MongoDB connection for serverless environments (Vercel)
+app.use(async (req, res, next) => {
+    try {
+        await connectMongo();
+    } catch (e) {
+        // Silently continue, controller handles fallback
+    }
+    next();
+});
+
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 500,
@@ -74,14 +84,10 @@ app.use(errorHandler);
 
 async function startServer() {
     try {
-        // 1. Initialize MongoDB Atlas for User Credentials & Authentication
         await connectMongo();
-
-        // 2. Initialize Local SQLite DB for Caching & GIS records
         await getDb();
         console.log('Database systems initialized successfully.');
 
-        // Bind to 0.0.0.0 to allow access from other devices on the same Wi-Fi / Local Network
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
         });
@@ -91,4 +97,9 @@ async function startServer() {
     }
 }
 
-startServer();
+// Only start the server if executed directly (e.g. node server.js), not when imported by Vercel serverless
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = app;
