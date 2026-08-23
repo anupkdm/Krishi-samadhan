@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const path = require('path');
 const { getDb } = require('./db/database');
+const { connectMongo } = require('./db/mongodb');
 const errorHandler = require('./middleware/errorHandler');
 
 dotenv.config();
@@ -34,7 +35,12 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health check endpoint for multi-device & cloud verification
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'healthy', name: 'Krishi Samadhan API', timestamp: new Date().toISOString() });
+    res.json({
+        status: 'healthy',
+        name: 'Krishi Samadhan API',
+        database: 'MongoDB Atlas Connected',
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Routes
@@ -68,11 +74,16 @@ app.use(errorHandler);
 
 async function startServer() {
     try {
-        await getDb(); // Initialize database
-        console.log('Database initialized.');
+        // 1. Initialize MongoDB Atlas for User Credentials & Authentication
+        await connectMongo();
+
+        // 2. Initialize Local SQLite DB for Caching & GIS records
+        await getDb();
+        console.log('Database systems initialized successfully.');
+
         // Bind to 0.0.0.0 to allow access from other devices on the same Wi-Fi / Local Network
         app.listen(PORT, '0.0.0.0', () => {
-            console.log(`Server running on http://0.0.0.0:${PORT}`);
+            console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);
