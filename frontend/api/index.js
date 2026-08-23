@@ -1,12 +1,14 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://anupkadam:anup96k@cluster0.megoa4x.mongodb.net/krishi_samadhan?retryWrites=true&w=majority';
 const JWT_SECRET = process.env.JWT_SECRET || 'krishi-samadhan-jwt-secret-key-2026';
 
-let cached = global.mongoose || { conn: null, promise: null };
-global.mongoose = cached;
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 async function connectToDatabase() {
   if (cached.conn && mongoose.connection.readyState === 1) {
@@ -18,7 +20,7 @@ async function connectToDatabase() {
       serverSelectionTimeoutMS: 15000,
       connectTimeoutMS: 15000
     }).then((m) => {
-      console.log('🍃 MongoDB Atlas Connected (Vercel Serverless frontend/api)');
+      console.log('🍃 MongoDB Atlas Connected (Vercel Serverless ES Module)');
       return m;
     });
   }
@@ -49,7 +51,6 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-// Helper to parse request body safely in Serverless environments
 async function parseBody(req) {
   if (req.body) {
     if (typeof req.body === 'string') {
@@ -60,7 +61,6 @@ async function parseBody(req) {
     }
   }
 
-  // Handle stream if body not pre-parsed
   return new Promise((resolve) => {
     let data = '';
     req.on('data', chunk => { data += chunk; });
@@ -75,8 +75,7 @@ async function parseBody(req) {
   });
 }
 
-module.exports = async function handler(req, res) {
-  // CORS Headers
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -144,8 +143,6 @@ module.exports = async function handler(req, res) {
         JWT_SECRET,
         { expiresIn: '30d' }
       );
-
-      console.log('🍃 Successfully registered user in Atlas:', normalizedEmail);
 
       return res.status(201).json({
         status: 'success',
@@ -246,4 +243,4 @@ module.exports = async function handler(req, res) {
     const errorMsg = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
     return res.status(500).json({ error: errorMsg });
   }
-};
+}
