@@ -1,57 +1,35 @@
-const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const app = express();
-
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://anupkadam:anup96k@cluster0.megoa4x.mongodb.net/krishi_samadhan?retryWrites=true&w=majority';
 const JWT_SECRET = process.env.JWT_SECRET || 'krishi-samadhan-jwt-secret-key-2026';
 
-// CORS Configuration
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
-
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// Global Mongoose Cache across Serverless Invocations
-let cached = global.mongoose;
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
+let cached = global.mongoose || { conn: null, promise: null };
+global.mongoose = cached;
 
 async function connectToDatabase() {
   if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;
   }
-
   if (!cached.promise) {
-    const opts = {
+    cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
       serverSelectionTimeoutMS: 10000
-    };
-
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
-      console.log('🍃 MongoDB Atlas Connected (Vercel Serverless api/index.js)');
+    }).then((m) => {
+      console.log('🍃 MongoDB Atlas Connected (Vercel Serverless)');
       return m;
     });
   }
-
   try {
     cached.conn = await cached.promise;
   } catch (e) {
     cached.promise = null;
     throw e;
   }
-
   return cached.conn;
 }
 
-// User Schema & Model
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -66,210 +44,188 @@ const userSchema = new mongoose.Schema({
     soil_type: { type: String, default: 'Vertisol (Black Cotton Soil)' }
   },
   createdAt: { type: Date, default: Date.now }
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-// Auto-connect middleware
-app.use(async (req, res, next) => {
-  try {
-    await connectToDatabase();
-  } catch (err) {
-    console.error('Mongo connection error:', err.message);
+module.exports = async function handler(req, res) {
+  // Global CORS Headers
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
-  next();
-});
 
-// Handler: Register
-const handleRegister = async (req, res) => {
+  const url = (req.url || '').toLowerCase();
+  const method = (req.method || 'GET').toUpperCase();
+
   try {
-    const { name, email, password, role, location } = req.body || {};
-
-    if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'Please enter your full name.' });
-    }
-    if (!email || !email.trim()) {
-      return res.status(400).json({ error: 'Please enter a valid email address.' });
-    }
-    if (!password || password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
     await connectToDatabase();
 
-    const existingUser = await User.findOne({ email: normalizedEmail });
-    if (existingUser) {
-      return res.status(400).json({ error: 'An account with this email address already exists. Please login instead.' });
+    // 1. HEALTH CHECK
+    if (url.includes('health') || url === '/' || url === '/api') {
+      const count = await User.countDocuments();
+      return res.status(200).json({
+        status: 'healthy',
+        database: 'MongoDB Atlas Connected',
+        totalUsers: count,
+        timestamp: new Date().toISOString()
+      });
     }
 
-    const password_hash = await bcrypt.hash(password, 10);
-    const userRole = role || 'farmer';
-    const userLocation = location || 'Maharashtra, India';
+    // 2. REGISTER
+    if (url.includes('register')) {
+      if (method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    const newUser = await User.create({
-      name: name.trim(),
-      email: normalizedEmail,
-      password_hash,
-      role: userRole,
-      location: userLocation,
-      profile: {
-        farm_name: `${name.trim()}'s Farm`,
-        crop: 'Onion & Wheat',
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch (e) {}
+      }
+      body = body || {};
+
+      const { name, email, password, role, location } = body;
+
+      if (!name || !name.trim()) return res.status(400).json({ error: 'Please enter your full name.' });
+      if (!email || !email.trim()) return res.status(400).json({ error: 'Please enter a valid email address.' });
+      if (!password || password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+
+      const normalizedEmail = email.trim().toLowerCase();
+      const existingUser = await User.findOne({ email: normalizedEmail });
+      if (existingUser) {
+        return res.status(400).json({ error: 'An account with this email address already exists. Please login instead.' });
+      }
+
+      const password_hash = await bcrypt.hash(password, 10);
+      const userRole = role || 'farmer';
+      const userLocation = location || 'Maharashtra, India';
+
+      const newUser = await User.create({
+        name: name.trim(),
+        email: normalizedEmail,
+        password_hash,
+        role: userRole,
         location: userLocation,
-        farm_area: 5.0,
-        soil_type: 'Vertisol (Black Cotton Soil)'
+        profile: {
+          farm_name: `${name.trim()}'s Farm`,
+          crop: 'Onion & Wheat',
+          location: userLocation,
+          farm_area: 5.0,
+          soil_type: 'Vertisol (Black Cotton Soil)'
+        }
+      });
+
+      const token = jwt.sign(
+        { id: newUser._id.toString(), email: normalizedEmail, role: userRole, name: newUser.name },
+        JWT_SECRET,
+        { expiresIn: '30d' }
+      );
+
+      console.log('🍃 Registered new user in Atlas:', normalizedEmail);
+
+      return res.status(201).json({
+        status: 'success',
+        message: 'Account registered successfully in MongoDB Atlas!',
+        token,
+        user: {
+          id: newUser._id.toString(),
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+          location: newUser.location,
+          profile: newUser.profile
+        }
+      });
+    }
+
+    // 3. LOGIN
+    if (url.includes('login')) {
+      if (method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch (e) {}
       }
-    });
+      body = body || {};
 
-    const token = jwt.sign(
-      { id: newUser._id.toString(), email: normalizedEmail, role: userRole, name: newUser.name },
-      JWT_SECRET,
-      { expiresIn: '30d' }
-    );
+      const { email, password } = body;
+      if (!email || !password) return res.status(400).json({ error: 'Please provide both email and password.' });
 
-    console.log(`✅ New user registered in Atlas: ${normalizedEmail}`);
+      const normalizedEmail = email.trim().toLowerCase();
+      const user = await User.findOne({ email: normalizedEmail });
 
-    return res.status(201).json({
-      status: 'success',
-      message: 'Account registered successfully in MongoDB Atlas!',
-      token,
-      user: {
-        id: newUser._id.toString(),
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        location: newUser.location,
-        profile: newUser.profile
+      if (!user) {
+        if (normalizedEmail === 'farmer@krishisamadhan.in' && password === 'farmer123') {
+          const hash = await bcrypt.hash('farmer123', 10);
+          const demoUser = await User.create({
+            name: 'Ramesh Patil',
+            email: 'farmer@krishisamadhan.in',
+            password_hash: hash,
+            role: 'farmer',
+            location: 'Sangamner, Maharashtra'
+          });
+          const token = jwt.sign({ id: demoUser._id.toString(), email: demoUser.email, role: demoUser.role, name: demoUser.name }, JWT_SECRET, { expiresIn: '30d' });
+          return res.status(200).json({ status: 'success', token, user: { id: demoUser._id.toString(), name: demoUser.name, email: demoUser.email, role: demoUser.role, location: demoUser.location } });
+        }
+        return res.status(401).json({ error: 'Invalid email or password. Please check your credentials.' });
       }
-    });
+
+      const isMatch = await bcrypt.compare(password, user.password_hash);
+      if (!isMatch) {
+        return res.status(401).json({ error: 'Invalid email or password. Please check your credentials.' });
+      }
+
+      const token = jwt.sign(
+        { id: user._id.toString(), email: user.email, role: user.role, name: user.name },
+        JWT_SECRET,
+        { expiresIn: '30d' }
+      );
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Logged in successfully!',
+        token,
+        user: {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          location: user.location,
+          profile: user.profile
+        }
+      });
+    }
+
+    // 4. ME
+    if (url.includes('me')) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const user = await User.findById(decoded.id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      return res.status(200).json({
+        status: 'success',
+        user: {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          location: user.location,
+          profile: user.profile
+        }
+      });
+    }
+
+    return res.status(404).json({ error: `API endpoint not found for URL: ${url}` });
   } catch (err) {
-    console.error('Registration serverless error:', err);
-    return res.status(500).json({ error: err.message || 'Internal server error during registration.' });
+    console.error('Serverless error:', err);
+    return res.status(500).json({ error: err.message || 'Internal Server Error' });
   }
 };
-
-// Handler: Login
-const handleLogin = async (req, res) => {
-  try {
-    const { email, password } = req.body || {};
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Please provide both email and password.' });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    await connectToDatabase();
-
-    const user = await User.findOne({ email: normalizedEmail });
-    if (!user) {
-      // Demo farmer auto-provision
-      if (normalizedEmail === 'farmer@krishisamadhan.in' && password === 'farmer123') {
-        const hash = await bcrypt.hash('farmer123', 10);
-        const demoUser = await User.create({
-          name: 'Ramesh Patil',
-          email: 'farmer@krishisamadhan.in',
-          password_hash: hash,
-          role: 'farmer',
-          location: 'Sangamner, Maharashtra'
-        });
-        const token = jwt.sign({ id: demoUser._id.toString(), email: demoUser.email, role: demoUser.role, name: demoUser.name }, JWT_SECRET, { expiresIn: '30d' });
-        return res.json({ status: 'success', token, user: { id: demoUser._id.toString(), name: demoUser.name, email: demoUser.email, role: demoUser.role, location: demoUser.location } });
-      }
-      return res.status(401).json({ error: 'Invalid email or password. Please check your credentials.' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password. Please check your credentials.' });
-    }
-
-    const token = jwt.sign(
-      { id: user._id.toString(), email: user.email, role: user.role, name: user.name },
-      JWT_SECRET,
-      { expiresIn: '30d' }
-    );
-
-    console.log(`✅ User authenticated in Atlas: ${normalizedEmail}`);
-
-    return res.json({
-      status: 'success',
-      message: 'Logged in successfully!',
-      token,
-      user: {
-        id: user._id.toString(),
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        location: user.location,
-        profile: user.profile
-      }
-    });
-  } catch (err) {
-    console.error('Login serverless error:', err);
-    return res.status(500).json({ error: err.message || 'Internal server error during login.' });
-  }
-};
-
-// Handler: Get Me
-const handleMe = async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    await connectToDatabase();
-    const user = await User.findById(decoded.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    return res.json({
-      status: 'success',
-      user: {
-        id: user._id.toString(),
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        location: user.location,
-        profile: user.profile
-      }
-    });
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid or expired session token' });
-  }
-};
-
-// Handler: Health
-const handleHealth = async (req, res) => {
-  try {
-    await connectToDatabase();
-    const count = await User.countDocuments();
-    return res.json({
-      status: 'healthy',
-      database: 'MongoDB Atlas Connected',
-      totalUsers: count,
-      timestamp: new Date().toISOString()
-    });
-  } catch (err) {
-    return res.json({
-      status: 'degraded',
-      error: err.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-};
-
-// Route Registrations with multi-prefix matching
-app.post(['/api/auth/register', '/auth/register', '/register'], handleRegister);
-app.post(['/api/auth/login', '/auth/login', '/login'], handleLogin);
-app.get(['/api/auth/me', '/auth/me', '/me'], handleMe);
-app.get(['/api/health', '/health', '/api', '/'], handleHealth);
-
-module.exports = app;
