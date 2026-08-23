@@ -48,6 +48,7 @@ const schemesRoutes = require('./routes/schemes');
 const advisoryRoutes = require('./routes/advisory');
 const chatbotRoutes = require('./routes/chatbot');
 const inputStoreRoutes = require('./routes/inputStore');
+const gisRoutes = require('./routes/gis');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/weather', weatherRoutes);
@@ -61,6 +62,7 @@ app.use('/api/advisories', advisoryRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/chat', chatbotRoutes);
 app.use('/api/input-stores', inputStoreRoutes);
+app.use('/api/gis', gisRoutes);
 
 app.use(errorHandler);
 

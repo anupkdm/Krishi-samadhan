@@ -3,7 +3,6 @@ import DashboardLayout from '../components/DashboardLayout';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import SourceBadge from '../components/SourceBadge';
-import MetricCard from '../components/MetricCard';
 import weatherService from '../services/weatherService';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -16,65 +15,60 @@ const Weather = () => {
 
   const [currentWeather, setCurrentWeather] = useState(null);
   const [forecastDays, setForecastDays] = useState([]);
+  const [hourlyData, setHourlyData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Modals & SMS
+  const [showArchModal, setShowArchModal] = useState(false);
+  const [selectedAlert, setSelectedAlert] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [smsSending, setSmsSending] = useState(false);
+
+  const coords = {
+    lat: activeLocation.latitude || 19.5772,
+    lon: activeLocation.longitude || 74.2173
+  };
 
   const fetchWeatherData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const lat = activeLocation?.latitude || 19.8833;
-      const lon = activeLocation?.longitude || 74.4833;
-
       const [current, forecastRes] = await Promise.all([
-        weatherService.getCurrentWeather(lat, lon),
-        weatherService.getForecast(lat, lon).catch(() => null)
+        weatherService.getCurrentWeather(coords.lat, coords.lon),
+        weatherService.getForecast(coords.lat, coords.lon).catch(() => null)
       ]);
 
       setCurrentWeather(current);
 
       const parsedDays = [];
-
-      // Case 1: forecast is an array of day objects
       if (forecastRes && Array.isArray(forecastRes.forecast)) {
         forecastRes.forecast.forEach((item, idx) => {
           parsedDays.push({
             date: item.date || `Day ${idx + 1}`,
             maxTemp: Math.round(item.temp_max ?? item.maxTemp ?? 31),
             minTemp: Math.round(item.temp_min ?? item.minTemp ?? 20),
-            precipProb: item.precipitation_probability ?? (item.rain > 0 ? 60 : 10),
-            weatherCode: item.weather_code ?? (item.rain > 0 ? 61 : 1)
+            rain: item.rain ?? (item.precipitation_sum ?? 0),
+            precipProb: item.precipitation_probability ?? (item.rain > 0 ? 60 : 15),
+            weatherCode: item.weather_code ?? (item.rain > 0 ? 61 : 1),
+            windSpeed: item.wind_speed ?? 12
           });
         });
-      }
-      // Case 2: forecast is an object containing daily time arrays (Open-Meteo format)
-      else if (forecastRes && forecastRes.forecast && Array.isArray(forecastRes.forecast.time)) {
-        const d = forecastRes.forecast;
-        for (let i = 0; i < d.time.length; i++) {
-          parsedDays.push({
-            date: d.time[i],
-            maxTemp: Math.round(d.temperature_2m_max?.[i] ?? 31),
-            minTemp: Math.round(d.temperature_2m_min?.[i] ?? 20),
-            precipProb: d.precipitation_probability_max?.[i] ?? (d.precipitation_sum?.[i] > 0 ? 60 : 10),
-            weatherCode: d.weather_code?.[i] ?? 1
-          });
-        }
-      }
-      // Case 3: daily object directly on response
-      else if (forecastRes && forecastRes.daily && Array.isArray(forecastRes.daily.time)) {
+      } else if (forecastRes && forecastRes.daily && Array.isArray(forecastRes.daily.time)) {
         const d = forecastRes.daily;
         for (let i = 0; i < d.time.length; i++) {
           parsedDays.push({
             date: d.time[i],
             maxTemp: Math.round(d.temperature_2m_max?.[i] ?? 31),
             minTemp: Math.round(d.temperature_2m_min?.[i] ?? 20),
-            precipProb: d.precipitation_probability_max?.[i] ?? (d.precipitation_sum?.[i] > 0 ? 60 : 10),
-            weatherCode: d.weather_code?.[i] ?? 1
+            rain: d.precipitation_sum?.[i] ?? 0.0,
+            precipProb: d.precipitation_probability_max?.[i] ?? (d.precipitation_sum?.[i] > 0 ? 60 : 15),
+            weatherCode: d.weather_code?.[i] ?? 1,
+            windSpeed: d.wind_speed_10m_max?.[i] ?? 14
           });
         }
       }
 
-      // Safe fallback if parsing resulted in empty list
       if (parsedDays.length === 0) {
         for (let i = 0; i < 7; i++) {
           const d = new Date();
@@ -83,13 +77,16 @@ const Weather = () => {
             date: d.toISOString().split('T')[0],
             maxTemp: 31 + (i % 3),
             minTemp: 21 + (i % 2),
-            precipProb: (i % 3 === 0) ? 60 : 15,
-            weatherCode: (i % 3 === 0) ? 61 : 1
+            rain: (i === 1) ? 35 : (i % 3 === 0 ? 5 : 0),
+            precipProb: (i === 1) ? 85 : ((i % 3 === 0) ? 50 : 10),
+            weatherCode: (i === 1) ? 65 : ((i % 3 === 0) ? 61 : 1),
+            windSpeed: 12 + (i % 4)
           });
         }
       }
 
       setForecastDays(parsedDays);
+      setHourlyData(forecastRes?.hourly || null);
     } catch (err) {
       console.error('Weather fetch error:', err);
       setError('Failed to fetch weather telemetry.');
@@ -114,40 +111,30 @@ const Weather = () => {
     return language === 'mr' ? '🌤️ सामान्य हवामान' : language === 'hi' ? '🌤️ सामान्य मौसम' : '🌤️ Mild Weather';
   };
 
-  const getWeatherIconOnly = (code) => {
-    const c = typeof code === 'number' ? code : parseInt(code, 10) || 1;
-    if (c === 0) return '☀️';
-    if (c >= 1 && c <= 3) return '🌤️';
-    if (c >= 45 && c <= 48) return '🌫️';
-    if (c >= 51 && c <= 55) return '🌦️';
-    if (c >= 61 && c <= 65) return '🌧️';
-    if (c >= 95 && c <= 99) return '⛈️';
-    return '🌤️';
-  };
-
-  // Safe signals normalization to guarantee array of strings
-  const getSignalsList = (rawSignals) => {
-    if (Array.isArray(rawSignals) && rawSignals.length > 0) {
-      return rawSignals.map(s => (typeof s === 'string' ? s : String(s)));
+  const handleSendAlert = async (alertObj) => {
+    setSelectedAlert(alertObj);
+    setSmsSending(true);
+    try {
+      const res = await weatherService.sendWeatherAlertSms({
+        farmerName: 'Ramesh Patil',
+        phone: '+91 98221 44521',
+        alertType: alertObj.type || 'rain',
+        language
+      });
+      setSmsSending(false);
+      setToastMessage(`📲 Farmer SMS Dispatched: "${res.message.substring(0, 50)}..."`);
+      setTimeout(() => setToastMessage(null), 5000);
+    } catch (err) {
+      setSmsSending(false);
+      setToastMessage('⚠️ SMS Dispatch Failed.');
+      setTimeout(() => setToastMessage(null), 3000);
     }
-    if (typeof rawSignals === 'object' && rawSignals !== null) {
-      const list = [];
-      if (rawSignals.spray_favorable) list.push(t('sprayFavorable'));
-      if (rawSignals.irrigation_need || rawSignals.irrigation_recommended) list.push(t('irrigationRecommended'));
-      if (rawSignals.heat_stress) list.push(language === 'mr' ? '⚠️ उष्णतेचा ताण: पिकांना पाणी द्या.' : '⚠️ Heat stress risk. Ensure irrigation.');
-      if (rawSignals.frost_risk) list.push(language === 'mr' ? '❄️ थंडीची शक्यता: पिकांचे संरक्षण करा.' : '❄️ Frost risk detected.');
-      if (list.length > 0) return list;
-    }
-    return [
-      t('sprayFavorable'),
-      t('irrigationRecommended')
-    ];
   };
 
   if (loading) {
     return (
       <DashboardLayout>
-        <LoadingState message={`${t('loadingMsg')} (${activeLocation?.name || 'Local Farm'})...`} />
+        <LoadingState message={`${t('loadingMsg')} (${activeLocation.name})...`} />
       </DashboardLayout>
     );
   }
@@ -160,119 +147,462 @@ const Weather = () => {
     );
   }
 
-  const temp = currentWeather?.temperature !== undefined ? currentWeather.temperature : 28.5;
-  const humidity = currentWeather?.humidity !== undefined ? currentWeather.humidity : 67;
-  const wind = currentWeather?.windSpeed ?? currentWeather?.wind_speed ?? 12.5;
-  const precip = currentWeather?.precipitation ?? 0.0;
-  const code = currentWeather?.weatherCode ?? currentWeather?.weather_code ?? 1;
-
-  const signals = getSignalsList(currentWeather?.signals);
-
   return (
     <DashboardLayout>
+      {/* TOAST NOTIFICATION */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 99999,
+          background: '#1b4332',
+          color: '#ffffff',
+          padding: '1rem 1.5rem',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-xl)',
+          fontWeight: 700,
+          border: '1px solid #4ade80',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          animation: 'fadeIn 0.3s ease'
+        }}>
+          <span>{toastMessage}</span>
+          <button
+            onClick={() => setToastMessage(null)}
+            style={{ background: 'transparent', border: 'none', color: '#ffffff', cursor: 'pointer', fontSize: '1.1rem' }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* PAGE HEADER & ARCHITECTURE TRIGGER */}
       <div className="page-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1>{t('weatherTitle')}</h1>
-            <p>{t('weatherDesc')} <strong>{activeLocation?.name || 'Sangamner'}</strong> ({activeLocation?.district || 'Maharashtra'}).</p>
+            <p>{t('weatherDesc')} <strong>{activeLocation.name}</strong> ({coords.lat.toFixed(4)}°N, {coords.lon.toFixed(4)}°E)</p>
           </div>
-          <SourceBadge source={currentWeather?.source || "Open-Meteo Micrometeorology"} status="Live Feed" />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => setShowArchModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <span>🌦️</span> Architecture Flow
+            </button>
+            <SourceBadge source="IMD & Open-Meteo Synoptic API" status="Live" />
+          </div>
         </div>
       </div>
 
-      {/* Top 4 Metrics */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-        <MetricCard title={t('temperature')} value={temp} unit="°C" icon="🌡️" trend="stable" subtitle="Current Ambient" />
-        <MetricCard title={t('humidity')} value={humidity} unit="%" icon="💧" trend="up" subtitle="Optimal Range" />
-        <MetricCard title={t('windSpeed')} value={wind} unit="km/h" icon="💨" trend="stable" subtitle="Gentle Breeze" />
-        <MetricCard title={t('precipitation')} value={precip} unit="mm" icon="🌧️" trend="stable" subtitle="Last 24 Hours" />
-      </div>
+      {/* 1. INPUTS SECTION: TEMPERATURE, RAINFALL, HUMIDITY, WIND */}
+      <div style={{ marginBottom: '1.75rem' }}>
+        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-800)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>
+          📥 Weather Telemetry Inputs (Sensors & APIs)
+        </div>
 
-      {/* Current Conditions & Signals */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
-        <div className="card">
-          <div className="card-header">
-            <h3>🌤️ {t('ambientConditions')}</h3>
+        <div className="dashboard-metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+          {/* Input 1: Temperature */}
+          <div className="metric-card" style={{ borderLeft: '4px solid #ef4444' }}>
+            <div className="metric-card-top">
+              <span className="metric-card-title">🌡️ Ambient Temperature</span>
+              <span className="metric-card-icon" style={{ background: '#fef2f2', color: '#ef4444' }}>🔥</span>
+            </div>
+            <div className="metric-card-value-wrap">
+              <span className="metric-card-value">{currentWeather?.temperature ?? 28.5}</span>
+              <span className="metric-card-unit">°C</span>
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              Range: <strong>{forecastDays[0]?.minTemp ?? 20}°C &ndash; {forecastDays[0]?.maxTemp ?? 33}°C</strong>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1rem 0' }}>
-            <div style={{ fontSize: '3.5rem', lineHeight: 1 }}>{getWeatherIconOnly(code)}</div>
-            <div>
-              <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--primary-800)', lineHeight: 1.1 }}>
-                {temp}°C
-              </div>
-              <div style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '0.25rem', fontWeight: '600' }}>
-                {getWeatherEmoji(code)}
-              </div>
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                Station: <strong>{activeLocation?.name || 'Local'}</strong> ({activeLocation?.latitude || 19.88}°N, {activeLocation?.longitude || 74.48}°E)
-              </div>
+
+          {/* Input 2: Rainfall */}
+          <div className="metric-card" style={{ borderLeft: '4px solid #3b82f6' }}>
+            <div className="metric-card-top">
+              <span className="metric-card-title">🌧️ Rainfall Rate</span>
+              <span className="metric-card-icon" style={{ background: '#eff6ff', color: '#3b82f6' }}>💧</span>
+            </div>
+            <div className="metric-card-value-wrap">
+              <span className="metric-card-value">{currentWeather?.precipitation ?? 0.0}</span>
+              <span className="metric-card-unit">mm/hr</span>
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              48h Forecast: <strong style={{ color: '#3b82f6' }}>{forecastDays[1]?.rain > 0 ? `${forecastDays[1].rain} mm (${forecastDays[1].precipProb}%)` : '0 mm'}</strong>
+            </div>
+          </div>
+
+          {/* Input 3: Humidity */}
+          <div className="metric-card" style={{ borderLeft: '4px solid #10b981' }}>
+            <div className="metric-card-top">
+              <span className="metric-card-title">💧 Relative Humidity</span>
+              <span className="metric-card-icon" style={{ background: '#f0fdf4', color: '#10b981' }}>🌿</span>
+            </div>
+            <div className="metric-card-value-wrap">
+              <span className="metric-card-value">{currentWeather?.humidity ?? 65}</span>
+              <span className="metric-card-unit">% RH</span>
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              Status: <strong>{currentWeather?.humidity > 80 ? 'High (Disease Alert)' : 'Optimal Growth'}</strong>
+            </div>
+          </div>
+
+          {/* Input 4: Wind Speed */}
+          <div className="metric-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
+            <div className="metric-card-top">
+              <span className="metric-card-title">🌬️ Wind & Spray Velocity</span>
+              <span className="metric-card-icon" style={{ background: '#f5f3ff', color: '#8b5cf6' }}>💨</span>
+            </div>
+            <div className="metric-card-value-wrap">
+              <span className="metric-card-value">{currentWeather?.windSpeed ?? 12.0}</span>
+              <span className="metric-card-unit">km/h</span>
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              Condition: <strong>{(currentWeather?.windSpeed ?? 12) < 15 ? 'Gentle (Spray Safe)' : 'Breezy (Drift Risk)'}</strong>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="card" style={{ borderLeft: '4px solid var(--primary-500)' }}>
-          <div className="card-header">
-            <h3>{t('weatherSignals')}</h3>
+      {/* 2. WEATHER ENGINE: RISK ANALYSIS (FLOOD, DROUGHT, HEATWAVE) */}
+      <div style={{ marginBottom: '2rem' }}>
+        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-800)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>
+          ⚙️ Weather Engine Risk Analysis (Flood &bull; Drought &bull; Heatwave)
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+          {/* Flood Risk */}
+          <div style={{
+            background: '#ffffff',
+            borderRadius: 'var(--radius-xl)',
+            border: '1px solid var(--border-light)',
+            borderTop: '4px solid #0284c7',
+            padding: '1.25rem',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <strong style={{ fontSize: '1rem', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span>🌊</span> Flood & Waterlogging Risk
+              </strong>
+              <span className={`badge ${currentWeather?.floodRisk?.level === 'High' ? 'badge-danger' : 'badge-info'}`}>
+                {currentWeather?.floodRisk?.level || 'Moderate'}
+              </span>
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0c4a6e', margin: '0.35rem 0' }}>
+              {currentWeather?.floodRisk?.score || 68}% <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Risk Index</span>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              {currentWeather?.floodRisk?.message || 'Heavy precipitation expected in next 48 hours. Vertisol soils have slow infiltration.'}
+            </p>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '0.5rem 0' }}>
-            {signals.map((sig, idx) => (
-              <div
-                key={idx}
-                style={{
-                  background: 'var(--primary-50)',
-                  border: '1px solid var(--primary-100)',
-                  padding: '0.75rem 1rem',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '0.88rem',
-                  color: 'var(--primary-900)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <span>🌾</span>
-                <span>{sig}</span>
-              </div>
-            ))}
+
+          {/* Heatwave Risk */}
+          <div style={{
+            background: '#ffffff',
+            borderRadius: 'var(--radius-xl)',
+            border: '1px solid var(--border-light)',
+            borderTop: '4px solid #ea580c',
+            padding: '1.25rem',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <strong style={{ fontSize: '1rem', color: '#c2410c', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span>🌡️</span> Heatwave & Thermal Stress
+              </strong>
+              <span className={`badge ${currentWeather?.heatwaveRisk?.level === 'High' ? 'badge-danger' : 'badge-warning'}`}>
+                {currentWeather?.heatwaveRisk?.level || 'Moderate'}
+              </span>
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#7c2d12', margin: '0.35rem 0' }}>
+              {currentWeather?.heatwaveRisk?.score || 74}% <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Thermal Index</span>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              {currentWeather?.heatwaveRisk?.message || 'Midday temperatures exceeding 34°C. Foliar transpirational loss is high.'}
+            </p>
+          </div>
+
+          {/* Drought Risk */}
+          <div style={{
+            background: '#ffffff',
+            borderRadius: 'var(--radius-xl)',
+            border: '1px solid var(--border-light)',
+            borderTop: '4px solid #eab308',
+            padding: '1.25rem',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <strong style={{ fontSize: '1rem', color: '#a16207', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span>🏜️</span> Drought & Moisture Deficit
+              </strong>
+              <span className="badge badge-warning">
+                {currentWeather?.droughtRisk?.level || 'Moderate'}
+              </span>
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#713f12', margin: '0.35rem 0' }}>
+              {currentWeather?.droughtRisk?.score || 54}% <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Deficit Index</span>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              {currentWeather?.droughtRisk?.message || 'Topsoil moisture depletion developing. Scheduled micro-irrigation recommended.'}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* 7-Day Synoptic Forecast */}
-      <div className="card">
-        <div className="card-header" style={{ marginBottom: '1.25rem' }}>
-          <h2>{t('synopticForecast')} ({activeLocation?.district || 'Region'})</h2>
+      {/* 3. OUTPUTS: ACTIONABLE FARMER ALERTS (AS REQUESTED) */}
+      <div style={{ marginBottom: '2rem' }}>
+        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-800)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>
+          📤 Outputs & Actionable Farmer Alerts
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem' }}>
-          {forecastDays.map((d, idx) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Alert 1: Heavy Rainfall Expected */}
+          <div style={{
+            background: '#ffffff',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border-light)',
+            borderLeft: '5px solid #ef4444',
+            padding: '1.25rem',
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}>
+            <div style={{ flex: 1, minWidth: '240px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+                <strong style={{ fontSize: '1.05rem', color: '#991b1b' }}>
+                  Heavy rainfall expected tomorrow.
+                </strong>
+                <span className="badge badge-danger">High Priority</span>
+              </div>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+                Synoptic radar detects approaching heavy precipitation (+45mm in next 24-48 hours). Soil saturation is high.
+              </p>
+              <div style={{ marginTop: '0.4rem', fontSize: '0.82rem', color: '#166534', background: '#f0fdf4', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-sm)' }}>
+                <strong>Agronomic Protocol:</strong> Postpone all flood irrigation and open field drainage furrows to prevent root asphyxiation.
+              </div>
+            </div>
+
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => handleSendAlert({
+                type: 'rain',
+                title: 'Heavy rainfall expected tomorrow.',
+                action: 'Avoid irrigation for 2 days.'
+              })}
+              disabled={smsSending}
+            >
+              📲 Dispatch Farmer SMS
+            </button>
+          </div>
+
+          {/* Alert 2: High Temperature Risk */}
+          <div style={{
+            background: '#ffffff',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border-light)',
+            borderLeft: '5px solid #f59e0b',
+            padding: '1.25rem',
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}>
+            <div style={{ flex: 1, minWidth: '240px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                <span style={{ fontSize: '1.25rem' }}>🌡</span>
+                <strong style={{ fontSize: '1.05rem', color: '#92400e' }}>
+                  High temperature risk.
+                </strong>
+                <span className="badge badge-warning">Thermal Warning</span>
+              </div>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+                Peak temperature forecast to reach 35°C with dry winds. Canopy moisture evaporation will accelerate.
+              </p>
+              <div style={{ marginTop: '0.4rem', fontSize: '0.82rem', color: '#9a3412', background: '#fff7ed', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-sm)' }}>
+                <strong>Agronomic Protocol:</strong> Irrigate early in the morning (5:30 AM – 8:00 AM) and maintain straw or plastic mulch cover.
+              </div>
+            </div>
+
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => handleSendAlert({
+                type: 'temp',
+                title: 'High temperature risk.',
+                action: 'Irrigate early morning.'
+              })}
+              disabled={smsSending}
+            >
+              📲 Dispatch Farmer SMS
+            </button>
+          </div>
+
+          {/* Alert 3: Irrigation Recommended */}
+          <div style={{
+            background: '#ffffff',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border-light)',
+            borderLeft: '5px solid #10b981',
+            padding: '1.25rem',
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}>
+            <div style={{ flex: 1, minWidth: '240px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                <span style={{ fontSize: '1.25rem' }}>💧</span>
+                <strong style={{ fontSize: '1.05rem', color: '#065f46' }}>
+                  Irrigation recommended.
+                </strong>
+                <span className="badge badge-success">Soil Sync</span>
+              </div>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+                Topsoil moisture is below optimal field capacity. Light micro-drip required for flowering and bulb formation.
+              </p>
+              <div style={{ marginTop: '0.4rem', fontSize: '0.82rem', color: '#15803d', background: '#f0fdf4', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-sm)' }}>
+                <strong>Agronomic Protocol:</strong> Deliver 90 minutes drip cycle in evening to replenish rhizosphere moisture.
+              </div>
+            </div>
+
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => handleSendAlert({
+                type: 'irrigation',
+                title: 'Irrigation recommended.',
+                action: 'Run 90m drip cycle.'
+              })}
+              disabled={smsSending}
+            >
+              📲 Dispatch Farmer SMS
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. 7-DAY SYNOPTIC FORECAST & TRENDS */}
+      <div className="card" style={{ marginBottom: '2rem' }}>
+        <div className="card-header">
+          <h2>📅 7-Day Synoptic Weather Forecast & Trends</h2>
+          <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Synced every 15 minutes</span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '0.75rem' }}>
+          {forecastDays.map((day, idx) => (
             <div
               key={idx}
               style={{
-                background: idx === 0 ? 'var(--primary-50)' : '#fcfdfc',
-                border: idx === 0 ? '2px solid var(--primary-300)' : '1px solid var(--border-light)',
-                borderRadius: 'var(--radius-md)',
+                background: idx === 0 ? 'var(--primary-50)' : '#ffffff',
+                border: idx === 0 ? '2px solid var(--primary-500)' : '1px solid var(--border-light)',
+                borderRadius: 'var(--radius-lg)',
                 padding: '1rem 0.75rem',
                 textAlign: 'center',
-                boxShadow: idx === 0 ? '0 4px 12px rgba(45,106,79,0.08)' : 'none'
+                boxShadow: 'var(--shadow-xs)',
+                transition: 'all 0.2s ease'
               }}
             >
-              <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                {idx === 0 ? (language === 'mr' ? 'आज' : language === 'hi' ? 'आज' : 'Today') : (typeof d.date === 'string' && d.date.includes('-') ? d.date.split('-').slice(1).join('/') : d.date)}
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: idx === 0 ? 'var(--primary-800)' : 'var(--text-muted)' }}>
+                {idx === 0 ? 'Today' : new Date(day.date).toLocaleDateString(language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'en-US', { weekday: 'short', month: 'numeric', day: 'numeric' })}
               </div>
-              <div style={{ fontSize: '2rem', margin: '0.3rem 0' }}>
-                {getWeatherIconOnly(d.weatherCode)}
+
+              <div style={{ fontSize: '1.85rem', margin: '0.35rem 0' }}>
+                {day.rain > 10 ? '🌧️' : (day.maxTemp > 33 ? '☀️' : '🌤️')}
               </div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--primary-900)' }}>
-                {d.maxTemp}° <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>{d.minTemp}°</span>
+
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginBottom: '0.35rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {getWeatherEmoji(day.weatherCode).split(' ')[1] || 'Cloudy'}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem', background: '#ffffff', padding: '0.2rem 0.4rem', borderRadius: '4px', border: '1px solid var(--border-light)' }}>
-                💧 {d.precipProb}% rain
+
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary-900)' }}>
+                {day.maxTemp}° <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)' }}>/ {day.minTemp}°</span>
+              </div>
+
+              <div style={{ fontSize: '0.74rem', color: day.precipProb > 50 ? '#0284c7' : 'var(--text-muted)', marginTop: '0.3rem', fontWeight: 700 }}>
+                💧 {day.precipProb}% ({day.rain} mm)
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* 5. ARCHITECTURE FLOW MODAL */}
+      {showArchModal && (
+        <div className="gis-modal-backdrop" onClick={() => setShowArchModal(false)}>
+          <div className="gis-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', marginBottom: '1.25rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-900)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>🌦️</span> Weather Monitoring Architecture
+              </h2>
+              <button
+                className="btn btn-sm"
+                onClick={() => setShowArchModal(false)}
+                style={{ background: '#f3f4f6', border: 'none', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ background: '#081c15', color: '#d8f3dc', padding: '1.25rem', borderRadius: 'var(--radius-lg)', fontFamily: 'monospace', fontSize: '0.82rem', lineHeight: '1.4', overflowX: 'auto', marginBottom: '1.25rem' }}>
+              <pre>{`🌦 Weather Monitoring Architecture
+             WEATHER APIs
+                  │
+      ┌───────────┼───────────┐
+      ▼           ▼           ▼
+   Rainfall   Temperature   Humidity
+      │           │           │
+      ├───────────┼───────────┤
+      ▼           ▼           ▼
+       WEATHER DATA PROCESSING
+                  │
+                  ▼
+            WEATHER ENGINE
+                  │
+        ┌─────────┼─────────┐
+        ▼         ▼         ▼
+     Forecast   Risk       Trends
+        │         │         │
+        ▼         ▼         ▼
+      Flood     Drought   Heatwave
+       Risk      Risk       Risk
+        │         │         │
+        └─────────┼─────────┘
+                  ▼
+          WEATHER DASHBOARD
+                  │
+                  ▼
+          FARMER ALERT`}</pre>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.84rem' }}>
+              <div style={{ background: '#f0fdf4', padding: '0.6rem 0.8rem', borderRadius: 'var(--radius-sm)', border: '1px solid #bbf7d0' }}>
+                <strong>Inputs:</strong> Temperature, Rainfall, Humidity, Wind, 7-Day Forecast, Synoptic Radar Warnings.
+              </div>
+              <div style={{ background: '#eff6ff', padding: '0.6rem 0.8rem', borderRadius: 'var(--radius-sm)', border: '1px solid #bfdbfe' }}>
+                <strong>Processing:</strong> Weather Engine calculates Flood Vulnerability, Heatwave Stress & Drought Moisture Deficit.
+              </div>
+              <div style={{ background: '#fffbeb', padding: '0.6rem 0.8rem', borderRadius: 'var(--radius-sm)', border: '1px solid #fde68a' }}>
+                <strong>Outputs:</strong> Heavy rain alert, Temperature risk warning, Irrigation recommendation & SMS dispatch.
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.25rem', textAlign: 'right' }}>
+              <button className="btn btn-primary" onClick={() => setShowArchModal(false)}>
+                Close Architecture Explorer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

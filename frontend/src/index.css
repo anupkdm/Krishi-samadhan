@@ -522,6 +522,9 @@ img, svg {
 /* ==========================================================================
    NAVBAR (PUBLIC & RESPONSIVE)
    ========================================================================== */
+/* ==========================================================================
+   NAVBAR (HEADER)
+   ========================================================================== */
 .navbar {
   position: sticky;
   top: 0;
@@ -1015,34 +1018,467 @@ img, svg {
 }
 
 /* ==========================================================================
-   GIS PAGE SPECIFICS
+   GIS DASHBOARD & 7-LAYER SPATIAL INTELLIGENCE STYLING
    ========================================================================== */
-.gis-layout {
+.gis-header-strip {
+  background: linear-gradient(135deg, #1b4332 0%, #081c15 100%);
+  color: #ffffff;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-lg);
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gis-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.gis-header-title {
+  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.gis-header-subtitle {
+  color: #d8f3dc;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.gis-header-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.gis-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gis-badge-pill:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.gis-badge-pill.alert-active {
+  background: #ef4444;
+  border-color: #f87171;
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+}
+
+.gis-layout {
+  display: grid;
+  grid-template-columns: 330px 1fr;
   gap: 1.5rem;
-  min-height: 520px;
+  margin-bottom: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .gis-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .gis-sidebar {
-  width: 320px;
-  flex-shrink: 0;
   background: #ffffff;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   border: 1px solid var(--border-light);
-  padding: 1.5rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+
+.gis-sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gis-sidebar-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--primary-900);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.gis-layer-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.gis-layer-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.gis-layer-item:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-200);
+}
+
+.gis-layer-item.active {
+  background: var(--primary-50);
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 1px var(--primary-500);
+}
+
+.gis-layer-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.gis-layer-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.gis-map-wrapper {
+  position: relative;
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+  min-height: 520px;
+  height: 600px;
   display: flex;
   flex-direction: column;
 }
 
-.gis-map-container {
-  flex-grow: 1;
+.gis-map-toolbar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  padding: 0.35rem 0.5rem;
   border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--border-light);
   box-shadow: var(--shadow-md);
-  min-height: 450px;
+  border: 1px solid var(--border-light);
 }
+
+.gis-tool-btn {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  background: #ffffff;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.gis-tool-btn:hover, .gis-tool-btn.active {
+  background: var(--primary-600);
+  color: #ffffff;
+  border-color: var(--primary-600);
+}
+
+.gis-map-legend {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  font-size: 0.78rem;
+  max-width: 320px;
+}
+
+.gis-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+/* 5 CORE METRIC CARDS STRIP */
+.gis-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1200px) {
+  .gis-metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .gis-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gis-metric-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gis-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.gis-metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gis-metric-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.gis-metric-val {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--primary-900);
+  line-height: 1.2;
+}
+
+.gis-metric-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* AI DECISION SUPPORT & ADVISORIES */
+.gis-advisories-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 2rem;
+}
+
+.gis-advisory-item {
+  background: #fafcfb;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.gis-advisory-item.high {
+  border-left: 4px solid #ef4444;
+  background: #fffafa;
+}
+
+.gis-advisory-item.medium {
+  border-left: 4px solid #f59e0b;
+  background: #fffdf5;
+}
+
+.gis-advisory-item.low {
+  border-left: 4px solid #10b981;
+  background: #f6fbf8;
+}
+
+.gis-advisory-item:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 6-STEP PIPELINE STEPPER */
+.gis-stepper-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f7faf8 100%);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--primary-200);
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-md);
+}
+
+.gis-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+  position: relative;
+}
+
+@media (max-width: 1024px) {
+  .gis-steps-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .gis-steps-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gis-step-box {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.gis-step-box.active {
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 2px var(--primary-200);
+  background: var(--primary-50);
+}
+
+.gis-step-num {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--primary-700);
+}
+
+.gis-step-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--primary-900);
+}
+
+.gis-step-desc {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+/* CUSTOM MODALS */
+.gis-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.gis-modal-content {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  max-width: 820px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 2rem;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+}
+
+/* Custom DivIcons */
+.mandi-div-icon, .sensor-div-icon, .pest-div-icon {
+  background: transparent;
+  border: none;
+}
+
 
 /* ==========================================================================
    WEATHER PAGE SPECIFICS

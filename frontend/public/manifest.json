@@ -1,0 +1,17 @@
+{
+  "name": "Krishi Samadhan — Agricultural Intelligence",
+  "short_name": "Krishi Samadhan",
+  "description": "Unified offline-ready agricultural decision platform for farmers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1b4332",
+  "theme_color": "#2d6a4f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}

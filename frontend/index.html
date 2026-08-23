@@ -3,12 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2d6a4f" />
     <meta name="description" content="Krishi Samadhan — Unified agricultural intelligence platform for weather, soil, satellite, crop, market monitoring and farmer advisory." />
     <title>Krishi Samadhan — Agricultural Intelligence Platform</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((reg) => console.log('📶 Krishi Samadhan Offline Service Worker active:', reg.scope))
+            .catch((err) => console.warn('Service Worker registration note:', err));
+        });
+      }
+    </script>
   </body>
 </html>
