@@ -1,6 +1,51 @@
 import api from './api';
 
-const EXPERT_PATHOLOGY_DATABASE = {
+export const LOCAL_KRISHI_SHOPS = [
+  {
+    locality: "Sangamner",
+    district: "Ahmednagar",
+    shops: [
+      { name: "Om Krishi Seva Kendra", address: "Shivaji Chowk, Akole Road, Sangamner", phone: "+91 98224 51230", rating: 4.8 },
+      { name: "Kisan Agro Agency", address: "Pune-Nashik Highway, Near Central Bus Stand, Sangamner", phone: "+91 94237 88912", rating: 4.7 },
+      { name: "Pravara Krishi Vikas Kendra", address: "Loni-Sangamner Road, Loni KD", phone: "+91 98904 67123", rating: 4.9 }
+    ]
+  },
+  {
+    locality: "Nashik",
+    district: "Nashik",
+    shops: [
+      { name: "Shree Ganesh Krishi Kendra", address: "Market Yard Gate #2, Pimpalgaon Baswant, Nashik", phone: "+91 94222 18765", rating: 4.9 },
+      { name: "Lasalgaon Agro Mall", address: "Station Road, Opp APMC Yard, Lasalgaon", phone: "+91 98501 44521", rating: 4.8 },
+      { name: "Godavari Kisan Kendra", address: "Mumbai Naka, Old Agra Road, Nashik City", phone: "+91 98231 67890", rating: 4.7 }
+    ]
+  },
+  {
+    locality: "Kopargaon",
+    district: "Ahmednagar",
+    shops: [
+      { name: "Sai Krishi Vikas Kendra", address: "Station Road, Shivaji Chowk, Kopargaon", phone: "+91 98901 34567", rating: 4.8 },
+      { name: "Shirdi Agro Center", address: "Nagar-Manmad Highway, Shirdi", phone: "+91 94215 90876", rating: 4.7 }
+    ]
+  },
+  {
+    locality: "Pune",
+    district: "Pune",
+    shops: [
+      { name: "Baramati Agro Kendra", address: "APMC Market Yard Complex, Baramati, Pune", phone: "+91 98500 23456", rating: 4.9 },
+      { name: "Gultekdi Kisan Agency", address: "Gate #4, Market Yard, Gultekdi, Pune", phone: "+91 98220 11223", rating: 4.8 }
+    ]
+  },
+  {
+    locality: "Solapur",
+    district: "Solapur",
+    shops: [
+      { name: "Mauli Krishi Seva Kendra", address: "Navi Peth, Near Old APMC Mandi, Solapur", phone: "+91 94235 67890", rating: 4.8 },
+      { name: "Siddheshwar Agro Inputs", address: "Saat Rasta, Solapur", phone: "+91 98900 45612", rating: 4.7 }
+    ]
+  }
+];
+
+export const EXPERT_PATHOLOGY_DATABASE = {
   onion: {
     prediction: "Purple Blotch & Thrips Infestation (Alternaria porri & Thrips tabaci)",
     scientificName: "Alternaria porri (Ellis) Cif. & Thrips tabaci Lindeman",
@@ -42,8 +87,66 @@ const EXPERT_PATHOLOGY_DATABASE = {
       "Step 3: Carry out the targeted dual-action spray within 24-48 hours during calm morning wind."
     ],
     cultural: "Maintain clean field sanitation, remove and burn severely blighted leaves, avoid sprinkler irrigation.",
-    preventive: "Crop rotation with non-allium crops (Maize/Soybean) and seed treatment with Thiram 75% WP @ 3g/kg seed."
+    preventive: "Crop rotation with non-allium crops (Maize/Soybean) and seed treatment with Thiram 75% WP @ 3g/kg seed.",
+    
+    // PRODUCT DIRECTORY WITH BUDGET TIERS & BUY LINKS
+    products: [
+      {
+        tier: "🌟 Top / High Efficacy (Quick Knockdown)",
+        tierCategory: "premium",
+        name: "Syngenta Ampligo / Alika (Chlorantraniliprole 9.3% + Lambda 4.6% ZC)",
+        brand: "Syngenta India",
+        packSize: "100 ml",
+        price: "₹850 – ₹920",
+        costPerAcre: "₹680 / acre (80 ml/acre)",
+        features: "Dual systemic & contact action. Instant stop-feeding effect on thrips & caterpillars.",
+        links: [
+          { platform: "BigHaat", url: "https://www.bighaat.com/products/ampligo-insecticide" },
+          { platform: "AgroStar", url: "https://www.agrostar.in/product/ampligo-insecticide" },
+          { platform: "Amazon India", url: "https://www.amazon.in/s?k=ampligo+insecticide" }
+        ]
+      },
+      {
+        tier: "💰 Most Affordable / Best Value (High ROI)",
+        tierCategory: "affordable",
+        name: "Proclaim / Emamectin Benzoate 5% SG + Mancozeb 75% WP (Dithane M-45)",
+        brand: "Crystal Crop / UPL",
+        packSize: "100 g + 500 g",
+        price: "₹380 + ₹260 = ₹640 Combo",
+        costPerAcre: "₹320 / acre",
+        features: "Proven, highly economical CIBRC standard for thrips + purple blotch fungus.",
+        links: [
+          { platform: "BigHaat", url: "https://www.bighaat.com/products/proclaim-insecticide" },
+          { platform: "IFFCO Bazar", url: "https://www.iffcobazar.in" },
+          { platform: "AgroStar", url: "https://www.agrostar.in" }
+        ]
+      },
+      {
+        tier: "🌿 Economical & Organic Alternative (Zero Chemical Residue)",
+        tierCategory: "organic",
+        name: "Azadirachtin 10,000 PPM Neem Oil + Beauveria Bassiana Bio-Fungicide",
+        brand: "Multiplex Bio / IFFCO Bio",
+        packSize: "500 ml + 1 kg",
+        price: "₹240 + ₹190 = ₹430 Combo",
+        costPerAcre: "₹215 / acre",
+        features: "100% organic, repels thrips, destroys fungal spore membranes, safe for export.",
+        links: [
+          { platform: "IFFCO Bazar", url: "https://www.iffcobazar.in/en/product/bio-pesticides" },
+          { platform: "BigHaat", url: "https://www.bighaat.com/collections/organic-pest-control" }
+        ]
+      }
+    ],
+
+    // REQUIRED FARM MACHINERY & SPRAYER TECH
+    machineryTech: {
+      sprayer: "16L 12V 12Ah Dual-Pump Battery Knapsack Sprayer (Pressure: 8.0 bar) or Tractor-Mounted 500L HTP Power Sprayer with 50m delivery hose.",
+      nozzleType: "Hollow Cone Brass Nozzle (0.3mm disc) to produce fine 90-120 micron fog droplets for thorough under-leaf penetration.",
+      droneSpraying: "10L Agriculture Kisan Drone with centrifugal atomizers @ 8 Litres/acre spray volume in 6 mins (Save 90% water).",
+      landPrep: "45 HP Tractor with 7-foot Rotavator + Raised Bed Maker (Broad Bed & Furrow BBF system: 120cm bed width, 30cm furrow).",
+      plantingWeeding: "Raised bed onion seedling transplanter & 5 HP Mini Power Weeder for inter-row weeding without damaging root systems."
+    }
   },
+
   cotton: {
     prediction: "Pink Bollworm Infestation & Alternaria Leaf Spot",
     scientificName: "Pectinophora gossypiella Saunders & Alternaria macrospora",
@@ -85,8 +188,64 @@ const EXPERT_PATHOLOGY_DATABASE = {
       "Step 3: Apply targeted ovicidal/larvicidal spray if trap catches exceed threshold."
     ],
     cultural: "Terminate cotton crop within 150 days to prevent diapausing larvae buildup in soil.",
-    preventive: "Deep summer ploughing to expose pupae to solar heat and predatory birds."
+    preventive: "Deep summer ploughing to expose pupae to solar heat and predatory birds.",
+    
+    // PRODUCTS
+    products: [
+      {
+        tier: "🌟 Top / High Efficacy (Long Residual Protection)",
+        tierCategory: "premium",
+        name: "FMC Coragen (Chlorantraniliprole 18.5% SC) / Rynaxypyr",
+        brand: "FMC India",
+        packSize: "150 ml",
+        price: "₹1,750 – ₹1,890",
+        costPerAcre: "₹700 / acre (60 ml/acre)",
+        features: "Ovi-larvicidal powerhouse. Paralyzes bollworm muscles within 2 hours. 18 days residual control.",
+        links: [
+          { platform: "BigHaat", url: "https://www.bighaat.com/products/coragen-insecticide" },
+          { platform: "AgroStar", url: "https://www.agrostar.in/product/coragen" },
+          { platform: "Amazon India", url: "https://www.amazon.in/s?k=coragen+insecticide" }
+        ]
+      },
+      {
+        tier: "💰 Most Affordable / Best Value (Economical Knockdown)",
+        tierCategory: "affordable",
+        name: "Profenofos 50% EC (Curacron / Prahar) + Pheromone Traps",
+        brand: "Syngenta / Dhanuka",
+        packSize: "500 ml + 8 Pectino-Lures",
+        price: "₹420 + ₹240 = ₹660",
+        costPerAcre: "₹380 / acre",
+        features: "Strong ovicidal translaminar action against eggs and newly hatched larvae.",
+        links: [
+          { platform: "BigHaat", url: "https://www.bighaat.com/products/curacron" },
+          { platform: "AgroStar", url: "https://www.agrostar.in" }
+        ]
+      },
+      {
+        tier: "🌿 Economical & Bio-Control Alternative",
+        tierCategory: "organic",
+        name: "Pectino-Lure Pheromone Traps + Trichogramma Bactrae Parasitoids",
+        brand: "PCI / Bio-Control Lab",
+        packSize: "8 Funnel Traps + 3 Tricho-Cards",
+        price: "₹320 / acre",
+        costPerAcre: "₹320 / acre",
+        features: "Captures male moths to disrupt mating cycle and parasitizes 85% of bollworm eggs naturally.",
+        links: [
+          { platform: "IFFCO Bazar", url: "https://www.iffcobazar.in" },
+          { platform: "BigHaat", url: "https://www.bighaat.com" }
+        ]
+      }
+    ],
+
+    machineryTech: {
+      sprayer: "Tractor-Mounted 500L / 1000L Boom Sprayer (coverage: 15 acres/day) with tall canopy crop clearance, or 20L Backpack Power Sprayer (2-stroke petrol).",
+      nozzleType: "Double Swivel Hollow Cone Nozzle (0.4mm) angled at 45° to hit both upper flowers and lower square stems.",
+      droneSpraying: "16L Drone Sprayer with anti-collision radar, calibrated @ 10 Litres/acre for dense cotton crop canopy.",
+      landPrep: "50 HP Tractor with 2-bottom Hydraulic Reversible MB Plough (deep summer ploughing to expose pupae) + 9-Tyne Cultivator.",
+      plantingWeeding: "Pneumatic precision planter for 4x1.5 ft or 3x1 ft spacing + Tractor-drawn inter-cultivator for weed eradication."
+    }
   },
+
   tomato: {
     prediction: "Early Blight & Tomato Leaf Curl Viral Vector",
     scientificName: "Alternaria solani Sorauer & Tomato Leaf Curl New Delhi Virus (ToLCNDV)",
@@ -128,8 +287,64 @@ const EXPERT_PATHOLOGY_DATABASE = {
       "Step 3: Spray the combined fungicide + vector control formulation within 24 hours."
     ],
     cultural: "Mulch with silver-black reflective plastic mulch to repel whiteflies and prevent soil splash.",
-    preventive: "Dip seedling roots in *Trichoderma viride* slurry (10g/L) for 20 minutes prior to transplanting."
+    preventive: "Dip seedling roots in *Trichoderma viride* slurry (10g/L) for 20 minutes prior to transplanting.",
+    
+    // PRODUCTS
+    products: [
+      {
+        tier: "🌟 Top / High Efficacy (Broad-Spectrum Strobilurin)",
+        tierCategory: "premium",
+        name: "Syngenta Amistar Top (Azoxystrobin 18.2% + Difenoconazole 11.4% SC)",
+        brand: "Syngenta India",
+        packSize: "200 ml",
+        price: "₹1,350 – ₹1,480",
+        costPerAcre: "₹675 / acre (100 ml/acre)",
+        features: "Systemic xylem-mobile protection. Halts early blight fungal respiration instantly and provides greasier foliage.",
+        links: [
+          { platform: "BigHaat", url: "https://www.bighaat.com/products/amistar-top-fungicide" },
+          { platform: "AgroStar", url: "https://www.agrostar.in/product/amistar-top" },
+          { platform: "Amazon India", url: "https://www.amazon.in/s?k=amistar+top" }
+        ]
+      },
+      {
+        tier: "💰 Most Affordable / Best Value (Contact Standard)",
+        tierCategory: "affordable",
+        name: "Blitox (Copper Oxychloride 50% WP) + Manik (Acetamiprid 20% SP)",
+        brand: "Tata Rallis / Dhanuka",
+        packSize: "500 g + 50 g",
+        price: "₹310 + ₹160 = ₹470 Combo",
+        costPerAcre: "₹310 / acre",
+        features: "Multi-site broad protective copper barrier combined with systemic whitefly control.",
+        links: [
+          { platform: "BigHaat", url: "https://www.bighaat.com/products/blitox-fungicide" },
+          { platform: "IFFCO Bazar", url: "https://www.iffcobazar.in" }
+        ]
+      },
+      {
+        tier: "🌿 Economical & Bio-Control Alternative",
+        tierCategory: "organic",
+        name: "Verticillium Lecanii Bio-Insecticide + Yellow Sticky Traps",
+        brand: "Multiplex / Bio-Kisan",
+        packSize: "1 kg + 20 Traps",
+        price: "₹220 + ₹180 = ₹400 Combo",
+        costPerAcre: "₹250 / acre",
+        features: "Entomopathogenic fungus infects and eliminates whitefly nymphs; yellow traps catch winged adults.",
+        links: [
+          { platform: "IFFCO Bazar", url: "https://www.iffcobazar.in" },
+          { platform: "BigHaat", url: "https://www.bighaat.com" }
+        ]
+      }
+    ],
+
+    machineryTech: {
+      sprayer: "16L Battery Sprayer with Telescopic Extension Lance (for undersides of leaves) or 300L Tractor Trolley Power Sprayer.",
+      nozzleType: "Fine Mist Hollow Cone Nozzle (0.3mm disc) to prevent flower drop while securing 100% leaf coverage.",
+      droneSpraying: "10L Agriculture Drone flying at 1.5m height above trellis canopy @ 8 Litres/acre.",
+      landPrep: "45 HP Tractor with Raised Bed Former (3-foot raised beds with 25-micron silver-black plastic mulch).",
+      plantingWeeding: "Bamboo/Galvanized GI wire trellis system for indeterminate tomato staking + Mini Power Weeder for furrow aeration."
+    }
   },
+
   pomegranate: {
     prediction: "Bacterial Blight / Telya (Xanthomonas axonopodis pv. punicae)",
     scientificName: "Xanthomonas axonopodis pv. punicae (Hingorani & Singh)",
@@ -171,7 +386,62 @@ const EXPERT_PATHOLOGY_DATABASE = {
       "Step 3: Apply preventive bactericide + copper spray within 24 hours of pruning."
     ],
     cultural: "Shift bahar regulation from Ambe bahar to Hasta bahar (September-October) in disease-prone belts.",
-    preventive: "Drench tree basin with 1% Bordeaux mixture at onset of monsoon."
+    preventive: "Drench tree basin with 1% Bordeaux mixture at onset of monsoon.",
+    
+    // PRODUCTS
+    products: [
+      {
+        tier: "🌟 Top / High Efficacy (Systemic Bactericide + Copper Hydroxide)",
+        tierCategory: "premium",
+        name: "Kocide 2000 (Copper Hydroxide 53.8% DF) + Bactronol (Bronopol 95%)",
+        brand: "Corteva Agriscience / Crystal",
+        packSize: "500 g + 100 g",
+        price: "₹780 + ₹420 = ₹1,200 Combo",
+        costPerAcre: "₹600 / acre",
+        features: "Superior bio-available Cu++ ions with smaller particle size (0.5µm). Penetrates bacterial cell walls rapidly.",
+        links: [
+          { platform: "BigHaat", url: "https://www.bighaat.com/products/kocide-fungicide" },
+          { platform: "AgroStar", url: "https://www.agrostar.in" },
+          { platform: "Amazon India", url: "https://www.amazon.in/s?k=kocide+2000" }
+        ]
+      },
+      {
+        tier: "💰 Most Affordable / Best Value (Standard Antibiotic Combo)",
+        tierCategory: "affordable",
+        name: "Streptocycline (Streptomycin Sulphate 90% + Tetracycline 10%) + Blitox 50% WP",
+        brand: "Hindustan Antibiotics / Rallis",
+        packSize: "10 x 6g Pouches + 500g Blitox",
+        price: "₹380 + ₹290 = ₹670 Combo",
+        costPerAcre: "₹335 / acre",
+        features: "Trusted ICAR-NRCP Solapur recommended standard for seasonal Telya suppression.",
+        links: [
+          { platform: "BigHaat", url: "https://www.bighaat.com/products/streptocycline" },
+          { platform: "IFFCO Bazar", url: "https://www.iffcobazar.in" }
+        ]
+      },
+      {
+        tier: "🌿 Economical & Bio-Control Alternative",
+        tierCategory: "organic",
+        name: "Bordeaux Mixture 1% (Copper Sulphate + Slaked Lime) + Pseudomonas Fluorescens",
+        brand: "Self-prepared / Agri-Bio",
+        packSize: "1 kg Copper Sulphate + 1 kg Lime",
+        price: "₹240 / 100 Litres",
+        costPerAcre: "₹240 / acre",
+        features: "Longest sticking power on pomegranate tree trunks and stem nodes against rain splash wash-off.",
+        links: [
+          { platform: "IFFCO Bazar", url: "https://www.iffcobazar.in" },
+          { platform: "BigHaat", url: "https://www.bighaat.com" }
+        ]
+      }
+    ],
+
+    machineryTech: {
+      sprayer: "Tractor-Mounted 600L Orchard Air-Assisted Blower Sprayer (Turbine Mist Blower with 8 brass nozzles) delivering 360° tree canopy coverage.",
+      nozzleType: "Ceramic Hollow Cone Nozzles (1.0mm - 1.2mm) with air swirl discs to blow mist deep inside tree forks.",
+      droneSpraying: "High-Payload 16L Drone with downwash prop airflow ensuring underside branch disinfection @ 12 L/acre.",
+      landPrep: "50 HP Tractor with Subsoiler (to break hard pan up to 2.5 ft depth for deep taproot growth) + Basin Digger.",
+      plantingWeeding: "Heavy-duty bypass secateurs & loppers with 70% isopropyl alcohol sanitizing bottle holder + Hydraulic tree pruning shears."
+    }
   }
 };
 
@@ -230,6 +500,9 @@ export const analyzePest = async (imageFile, crop) => {
     chemicalSolution: matched.chemicalSolution,
     organicSolution: matched.organicSolution,
     immediateActionPlan: matched.immediateActionPlan,
+    products: matched.products,
+    machineryTech: matched.machineryTech,
+    localShops: LOCAL_KRISHI_SHOPS,
     treatmentPlan: {
       chemical: matched.chemicalSolution?.dosagePer10L || matched.recommendation,
       organic: matched.organicSolution?.formulation || 'Spray 5% Neem Seed Kernel Extract (NSKE) @ 50ml/10L water.',
@@ -243,7 +516,8 @@ const pestService = {
   analyzePest,
   getStoredApiKey,
   setStoredApiKey,
-  EXPERT_PATHOLOGY_DATABASE
+  EXPERT_PATHOLOGY_DATABASE,
+  LOCAL_KRISHI_SHOPS
 };
 
 export default pestService;

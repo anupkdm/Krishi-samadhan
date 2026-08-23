@@ -17,6 +17,7 @@ const Pest = () => {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [currentKey, setCurrentKey] = useState('');
   const [speaking, setSpeaking] = useState(false);
+  const [activeTab, setActiveTab] = useState('treatment'); // 'treatment' | 'products' | 'machinery' | 'shops'
 
   const crops = ['Onion', 'Cotton', 'Tomato', 'Pomegranate', 'Sugarcane', 'Soybean', 'Wheat', 'Rice', 'Chilli', 'Gram', 'Guava', 'Grapes'];
 
@@ -70,6 +71,7 @@ const Pest = () => {
     try {
       const response = await pestService.analyzePest(image, crop);
       setResult(response);
+      setActiveTab('treatment');
     } catch (err) {
       console.error('Pest analysis error:', err);
       setError('Failed to analyze pathology image.');
@@ -128,7 +130,7 @@ const Pest = () => {
             >
               <span>🔑</span>
               <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>
-                {currentKey ? 'Gemini 2.5/3.7 Vision Live' : 'Configure Vision API Key'}
+                {currentKey ? 'Gemini Vision AI Live' : 'Configure Vision API Key'}
               </span>
             </button>
 
@@ -234,10 +236,10 @@ const Pest = () => {
               </h3>
               <p style={{ fontSize: '0.9rem', maxWidth: '440px', margin: '0 auto', lineHeight: 1.5 }}>
                 {language === 'mr'
-                  ? 'पिकाच्या बाधित पानाचा, खोडाचा किंवा किडीचा फोटो अपलोड करा. आमची AI सिस्टीम रोगाची नेमकी कारणे, हवामान अनुकूलता, आणि CIBRC प्रमाणित अचूक औषध फवारणी डोस देईल.'
+                  ? 'पिकाच्या बाधित पानाचा, खोडाचा किंवा किडीचा फोटो अपलोड करा. आमची AI सिस्टीम रोगाची नेमकी कारणे, औषध खरेदी लिंक्स, जवळची कृषी दुकाने व आवश्यक शेती यंत्रे देईल.'
                   : language === 'hi'
-                  ? 'फसल की प्रभावित पत्ती या कीट की तस्वीर अपलोड करें। हमारा AI मॉडल रोग के सटीक कारण, मौसम अनुकूलता एवं CIBRC प्रमाणित दवा की खुराक बताएगा।'
-                  : 'Upload a well-lit photo of affected foliage or pest infestation. The vision AI engine will identify the exact causal organism, environmental triggers, and calculate certified chemical & biological solutions.'}
+                  ? 'फसल की प्रभावित पत्ती या कीट की तस्वीर अपलोड करें। हमारा AI मॉडल रोग के सटीक कारण, दवा खरीद लिंक, नजदीकी दुकानें और आवश्यक मशीनरी बताएगा।'
+                  : 'Upload a well-lit photo of affected foliage or pest infestation. The vision AI engine will identify the exact causal organism, product buying links across price tiers, nearby store addresses, and required machinery.'}
               </p>
             </div>
           )}
@@ -292,142 +294,281 @@ const Pest = () => {
                   </div>
                 </div>
 
-                {/* 1. EXACT DISEASE CAUSE & TRIGGER ANALYSIS */}
+                {/* Exact Disease Cause & Trigger Analysis */}
                 {result.causeAnalysis && (
                   <div style={{ marginTop: '0.85rem', paddingTop: '0.85rem', borderTop: '1px solid var(--border-light)' }}>
                     <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#991b1b', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <span>🔬</span> {language === 'mr' ? 'रोगाची नेमकी कारणे व प्रसार (Exact Causes):' : 'Exact Disease Causes & Transmission:'}
+                      <span>🔬</span> {language === 'mr' ? 'रोगाची नेमकी कारणे व प्रसार:' : 'Exact Disease Causes & Transmission:'}
                     </div>
 
                     <div style={{ fontSize: '0.82rem', color: 'var(--text-main)', marginBottom: '0.4rem' }}>
-                      <strong>Pathogen Classification:</strong> {result.causeAnalysis.pathogenType} ({result.causeAnalysis.causalOrganism})
+                      <strong>Pathogen:</strong> {result.causeAnalysis.pathogenType} ({result.causeAnalysis.causalOrganism})
                     </div>
 
                     {result.causeAnalysis.transmissionMode && (
                       <div style={{ fontSize: '0.82rem', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                        <strong>Transmission Vector:</strong> {result.causeAnalysis.transmissionMode}
+                        <strong>Vector:</strong> {result.causeAnalysis.transmissionMode}
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
 
-                    {result.causeAnalysis.environmentalTriggers && Array.isArray(result.causeAnalysis.environmentalTriggers) && (
-                      <div>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                          🌦️ Favorable Environmental Triggers:
+              {/* TABS: Treatment | Products & Buy Links | Farm Machinery | Local Shops */}
+              <div style={{ display: 'flex', gap: '0.4rem', borderBottom: '2px solid var(--border-light)', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+                <button
+                  className={`btn btn-sm ${activeTab === 'treatment' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setActiveTab('treatment')}
+                  style={{ borderRadius: '6px 6px 0 0', padding: '0.4rem 0.8rem', fontSize: '0.82rem' }}
+                >
+                  🧪 {language === 'mr' ? 'उपचार व डोस' : 'Prescription & Dosages'}
+                </button>
+                <button
+                  className={`btn btn-sm ${activeTab === 'products' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setActiveTab('products')}
+                  style={{ borderRadius: '6px 6px 0 0', padding: '0.4rem 0.8rem', fontSize: '0.82rem' }}
+                >
+                  🛒 {language === 'mr' ? 'औषधे व खरेदी लिंक्स' : 'Products & Buy Links'}
+                </button>
+                <button
+                  className={`btn btn-sm ${activeTab === 'machinery' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setActiveTab('machinery')}
+                  style={{ borderRadius: '6px 6px 0 0', padding: '0.4rem 0.8rem', fontSize: '0.82rem' }}
+                >
+                  🚜 {language === 'mr' ? 'आवश्यक शेती यंत्रे' : 'Farm Machinery & Sprayers'}
+                </button>
+                <button
+                  className={`btn btn-sm ${activeTab === 'shops' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setActiveTab('shops')}
+                  style={{ borderRadius: '6px 6px 0 0', padding: '0.4rem 0.8rem', fontSize: '0.82rem' }}
+                >
+                  🏬 {language === 'mr' ? 'नजीकची दुकाने' : 'Local Krishi Kendras'}
+                </button>
+              </div>
+
+              {/* TAB 1: TREATMENT & DOSAGES */}
+              {activeTab === 'treatment' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
+                  {/* Chemical Solution */}
+                  <div style={{ background: '#fef2f2', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #fecaca' }}>
+                    <div style={{ fontWeight: 800, color: '#b91c1c', marginBottom: '0.45rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span>🧪</span> {language === 'mr' ? 'रासायनिक फवारणी उपाय (CIBRC अचूक डोस)' : 'Exact Chemical Solution (CIBRC Formulation)'}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', lineHeight: 1.5, marginBottom: '0.4rem' }}>
+                      <strong>Active Ingredients:</strong> {result.chemicalSolution?.activeIngredients || result.recommendation}
+                    </div>
+                    {result.chemicalSolution?.dosagePer10L && (
+                      <div style={{ background: '#ffffff', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid #fee2e2', fontSize: '0.82rem', marginBottom: '0.35rem' }}>
+                        💧 <strong>Per 10L Pump Dosage:</strong> {result.chemicalSolution.dosagePer10L}
+                      </div>
+                    )}
+                    {result.chemicalSolution?.dosagePerAcre && (
+                      <div style={{ background: '#ffffff', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid #fee2e2', fontSize: '0.82rem', marginBottom: '0.35rem' }}>
+                        🌾 <strong>Per Acre Dosage:</strong> {result.chemicalSolution.dosagePerAcre}
+                      </div>
+                    )}
+                    {result.chemicalSolution?.waitingPeriodPHI && (
+                      <div style={{ fontSize: '0.78rem', color: '#991b1b', fontWeight: 700, marginTop: '0.25rem' }}>
+                        ⏳ {result.chemicalSolution.waitingPeriodPHI}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Organic Solution */}
+                  <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #bbf7d0' }}>
+                    <div style={{ fontWeight: 800, color: '#15803d', marginBottom: '0.45rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span>🌿</span> {language === 'mr' ? 'सेंद्रिय व जैविक उपाय (Organic Solution)' : 'Organic & Biological Bio-Control Plan'}
+                    </div>
+                    <div style={{ fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: 1.5, marginBottom: '0.35rem' }}>
+                      <strong>Foliar Bio-Control:</strong> {result.organicSolution?.formulation || result.treatmentPlan?.organic}
+                    </div>
+                    {result.organicSolution?.mechanicalTraps && (
+                      <div style={{ fontSize: '0.82rem', color: 'var(--primary-800)', fontWeight: 600 }}>
+                        🪤 <strong>Field Traps:</strong> {result.organicSolution.mechanicalTraps}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Immediate 24-48 Hour Action */}
+                  {result.immediateActionPlan && Array.isArray(result.immediateActionPlan) && (
+                    <div style={{ background: '#eff6ff', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #bfdbfe' }}>
+                      <div style={{ fontWeight: 800, color: '#1d4ed8', marginBottom: '0.45rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span>⚡</span> {language === 'mr' ? 'पुढील २४ ते ४८ तासांत करायची तातडीची कृती:' : 'Immediate 24-48 Hour Action Checklist:'}
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.82rem', color: 'var(--text-main)', lineHeight: 1.45 }}>
+                        {result.immediateActionPlan.map((act, aIdx) => (
+                          <li key={aIdx}><strong>{act}</strong></li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 2: PRODUCTS, BUDGET TIERS & BUY LINKS */}
+              {activeTab === 'products' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    {language === 'mr'
+                      ? 'किफायतशीर (Affordable) ते उच्च दर्जाच्या (Premium) औषधांची तुलना आणि ऑनलाईन खरेदी लिंक्स:'
+                      : 'Comparison from Most Affordable to Premium High-Efficacy with direct buy links:'}
+                  </div>
+
+                  {(result.products || []).map((prod, pIdx) => (
+                    <div
+                      key={pIdx}
+                      style={{
+                        background: prod.tierCategory === 'premium' ? '#faf5ff' : prod.tierCategory === 'affordable' ? '#f0fdf4' : '#fffbeb',
+                        border: `1px solid ${prod.tierCategory === 'premium' ? '#e9d5ff' : prod.tierCategory === 'affordable' ? '#bbf7d0' : '#fef3c7'}`,
+                        borderRadius: 'var(--radius-md)',
+                        padding: '1rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <div>
+                          <span
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              padding: '0.2rem 0.5rem',
+                              borderRadius: '12px',
+                              background: prod.tierCategory === 'premium' ? '#9333ea' : prod.tierCategory === 'affordable' ? '#16a34a' : '#d97706',
+                              color: '#ffffff'
+                            }}
+                          >
+                            {prod.tier}
+                          </span>
+                          <h4 style={{ fontSize: '1rem', color: 'var(--primary-900)', margin: '0.35rem 0 0.15rem 0' }}>
+                            {prod.name}
+                          </h4>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            <strong>Brand:</strong> {prod.brand} | <strong>Pack Size:</strong> {prod.packSize}
+                          </div>
                         </div>
-                        <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.8rem', color: 'var(--text-main)', lineHeight: 1.4 }}>
-                          {result.causeAnalysis.environmentalTriggers.map((trig, tIdx) => (
-                            <li key={tIdx}>{trig}</li>
-                          ))}
-                        </ul>
+
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-800)' }}>
+                            {prod.price}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            Cost: <strong>{prod.costPerAcre}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', lineHeight: 1.4 }}>
+                        {prod.features}
+                      </div>
+
+                      {/* Buy Links */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', paddingTop: '0.5rem', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                          🛒 Buy Online:
+                        </span>
+                        {(prod.links || []).map((lnk, lIdx) => (
+                          <a
+                            key={lIdx}
+                            href={lnk.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-outline"
+                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', borderRadius: '12px', textDecoration: 'none' }}
+                          >
+                            🌐 {lnk.platform} &rarr;
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* TAB 3: REQUIRED FARM MACHINERY & SPRAYERS */}
+              {activeTab === 'machinery' && result.machineryTech && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                  <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+                    <h4 style={{ fontSize: '0.92rem', color: 'var(--primary-900)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <span>💨</span> {language === 'mr' ? 'फवारणी यंत्र तंत्रज्ञान (Sprayer Specifications):' : 'Precision Sprayer Specifications:'}
+                    </h4>
+                    <div style={{ fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: 1.5 }}>
+                      {result.machineryTech.sprayer}
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+                    <h4 style={{ fontSize: '0.92rem', color: 'var(--primary-900)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <span>🎯</span> {language === 'mr' ? 'नोझल निवड व फवारा दाब (Nozzle Type):' : 'Nozzle Type & Micron Droplet Size:'}
+                    </h4>
+                    <div style={{ fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: 1.5 }}>
+                      {result.machineryTech.nozzleType}
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #bbf7d0' }}>
+                    <h4 style={{ fontSize: '0.92rem', color: '#15803d', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <span>🛸</span> {language === 'mr' ? 'किसान ड्रोन फवारणी तंत्र (Agriculture Drone Tech):' : 'Agricultural Drone Spraying Guide:'}
+                    </h4>
+                    <div style={{ fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: 1.5 }}>
+                      {result.machineryTech.droneSpraying}
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+                    <h4 style={{ fontSize: '0.92rem', color: 'var(--primary-900)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <span>🚜</span> {language === 'mr' ? 'मशागत व गादीवाफा यंत्रे (Land Prep & Bed Making):' : 'Land Prep, Bed Former & Planters:'}
+                    </h4>
+                    <div style={{ fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: 1.5 }}>
+                      {result.machineryTech.landPrep}
+                    </div>
+                    {result.machineryTech.plantingWeeding && (
+                      <div style={{ fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: 1.5, marginTop: '0.35rem' }}>
+                        {result.machineryTech.plantingWeeding}
                       </div>
                     )}
                   </div>
-                )}
-
-                {/* Observed Symptoms */}
-                {result.symptoms && Array.isArray(result.symptoms) && (
-                  <div style={{ marginTop: '0.85rem', paddingTop: '0.85rem', borderTop: '1px solid var(--border-light)' }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary-900)', marginBottom: '0.35rem' }}>
-                      🔍 {language === 'mr' ? 'पानावर दिसून आलेली प्रमुख लक्षणे:' : 'Observed Visual Pathology Symptoms:'}
-                    </div>
-                    <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.82rem', color: 'var(--text-main)', lineHeight: 1.45 }}>
-                      {result.symptoms.map((s, idx) => (
-                        <li key={idx}>{s}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              {/* EXACT SOLUTIONS & PRESCRIPTIONS */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
-                {/* 1. Exact Chemical Solution (CIBRC Certified) */}
-                <div style={{ background: '#fef2f2', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #fecaca' }}>
-                  <div style={{ fontWeight: 800, color: '#b91c1c', marginBottom: '0.45rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span>🧪</span> {language === 'mr' ? 'रासायनिक फवारणी उपाय (CIBRC अचूक डोस)' : 'Exact Chemical Solution (CIBRC Formulation)'}
-                  </div>
-
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', lineHeight: 1.5, marginBottom: '0.4rem' }}>
-                    <strong>Active Ingredients:</strong> {result.chemicalSolution?.activeIngredients || result.recommendation}
-                  </div>
-
-                  {result.chemicalSolution?.dosagePer10L && (
-                    <div style={{ background: '#ffffff', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid #fee2e2', fontSize: '0.82rem', marginBottom: '0.35rem' }}>
-                      💧 <strong>Per 10L Pump Dosage:</strong> {result.chemicalSolution.dosagePer10L}
-                    </div>
-                  )}
-
-                  {result.chemicalSolution?.dosagePerAcre && (
-                    <div style={{ background: '#ffffff', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid #fee2e2', fontSize: '0.82rem', marginBottom: '0.35rem' }}>
-                      🌾 <strong>Per Acre Dosage (200L Water):</strong> {result.chemicalSolution.dosagePerAcre}
-                    </div>
-                  )}
-
-                  {result.chemicalSolution?.applicationMethod && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
-                      🎯 <strong>Method:</strong> {result.chemicalSolution.applicationMethod}
-                    </div>
-                  )}
-
-                  {result.chemicalSolution?.waitingPeriodPHI && (
-                    <div style={{ fontSize: '0.78rem', color: '#991b1b', fontWeight: 700, marginTop: '0.25rem' }}>
-                      ⏳ {result.chemicalSolution.waitingPeriodPHI}
-                    </div>
-                  )}
                 </div>
+              )}
 
-                {/* 2. Organic & Biological Solution */}
-                <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #bbf7d0' }}>
-                  <div style={{ fontWeight: 800, color: '#15803d', marginBottom: '0.45rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span>🌿</span> {language === 'mr' ? 'सेंद्रिय व जैविक उपाय (Organic Solution)' : 'Organic & Biological Bio-Control Plan'}
+              {/* TAB 4: NEARBY LOCAL KRISHI SEVA KENDRA SHOPS */}
+              {activeTab === 'shops' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    {language === 'mr'
+                      ? 'अधिकृत स्थानिक कृषी सेवा केंद्रे (पत्ता व संपर्क क्रमांक):'
+                      : 'Verified Local Krishi Seva Kendra Store Directory with contact details:'}
                   </div>
 
-                  <div style={{ fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: 1.5, marginBottom: '0.35rem' }}>
-                    <strong>Foliar Bio-Control:</strong> {result.organicSolution?.formulation || result.treatmentPlan?.organic}
-                  </div>
-
-                  {result.organicSolution?.bioControl && (
-                    <div style={{ fontSize: '0.82rem', color: 'var(--text-main)', marginBottom: '0.35rem' }}>
-                      <strong>Antagonist Strain:</strong> {result.organicSolution.bioControl}
+                  {(result.localShops || []).map((locGroup, gIdx) => (
+                    <div key={gIdx} style={{ background: '#ffffff', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '0.85rem 1rem' }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-900)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <span>📍</span> {locGroup.locality} ({locGroup.district})
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
+                        {locGroup.shops.map((sh, sIdx) => (
+                          <div key={sIdx} style={{ background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--primary-900)' }}>
+                              {sh.name}
+                            </div>
+                            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.2rem 0' }}>
+                              {sh.address}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.35rem' }}>
+                              <a
+                                href={`tel:${sh.phone.replace(/[^0-9+]/g, '')}`}
+                                style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', textDecoration: 'none' }}
+                              >
+                                📞 {sh.phone}
+                              </a>
+                              <span style={{ fontSize: '0.72rem', color: '#eab308' }}>⭐ {sh.rating}/5</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  )}
-
-                  {result.organicSolution?.mechanicalTraps && (
-                    <div style={{ fontSize: '0.82rem', color: 'var(--primary-800)', fontWeight: 600 }}>
-                      🪤 <strong>Field Traps:</strong> {result.organicSolution.mechanicalTraps}
-                    </div>
-                  )}
+                  ))}
                 </div>
-
-                {/* 3. Immediate 24-48 Hour Farmer Action Checklist */}
-                {result.immediateActionPlan && Array.isArray(result.immediateActionPlan) && (
-                  <div style={{ background: '#eff6ff', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #bfdbfe' }}>
-                    <div style={{ fontWeight: 800, color: '#1d4ed8', marginBottom: '0.45rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span>⚡</span> {language === 'mr' ? 'पुढील २४ ते ४८ तासांत करायची तातडीची कृती:' : 'Immediate 24-48 Hour Action Checklist:'}
-                    </div>
-                    <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.82rem', color: 'var(--text-main)', lineHeight: 1.45 }}>
-                      {result.immediateActionPlan.map((act, aIdx) => (
-                        <li key={aIdx}><strong>{act}</strong></li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* 4. Cultural & Preventive Care */}
-                <div style={{ background: '#fffbeb', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid #fef3c7' }}>
-                  <div style={{ fontWeight: 700, color: '#b45309', marginBottom: '0.3rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span>🛡️</span> {language === 'mr' ? 'मशागत व प्रतिबंधात्मक स्वच्छता:' : 'Cultural Sanitation & Next-Cycle Prevention:'}
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--text-main)', lineHeight: 1.45, marginBottom: '0.25rem' }}>
-                    {result.cultural || result.treatmentPlan?.cultural}
-                  </div>
-                  {result.preventive && (
-                    <div style={{ fontSize: '0.82rem', color: 'var(--text-main)', lineHeight: 1.45 }}>
-                      <strong>Next Season:</strong> {result.preventive || result.treatmentPlan?.preventive}
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>

@@ -86,8 +86,6 @@ export default function Chatbot() {
   useEffect(() => {
     const curTopo = selectedTopology || DEFAULT_TOPOLOGY;
     const regionName = curTopo.name || 'Sangamner / Ahmednagar';
-    const topoDesc = curTopo.topography || 'Western Ghats rain-shadow plateau';
-    const soilDesc = curTopo.soilType || 'Vertisol Black Cotton Soil';
     const majorCrop = (curTopo.majorCrops && curTopo.majorCrops[0]) || 'Onion';
     const apmcName = (curTopo.apmcHub || 'Sangamner APMC').split(' ')[0];
 
@@ -96,16 +94,16 @@ export default function Chatbot() {
         id: 'init-lang-' + language,
         sender: 'bot',
         text: language === 'mr'
-          ? `🌿 **राम राम${user?.name ? ' ' + user.name : ' मित्रा'}! कसा आहेस?** 🙏\n\nमी तुझा शेती मित्र **कृषी AI**. आपल्या **${regionName}** भागातील शेती, काळी जमीन आणि हवामानाची सर्व पक्की माहिती माझ्याकडे आहे.\n\nतुला हवामान, खतांचा डोस, कीड-रोग उपाय, आजचे बाजारभाव किंवा सरकारी योजनेचा फॉर्म कसा भरावा याविषयी काहीही विचारायचे असेल तर हक्काने विचार मित्रा. सांग, आज शेतात काय काम चालू आहे?`
+          ? `🌿 **राम राम${user?.name ? ' ' + user.name : ' मित्रा'}! कसा आहेस?** 🙏\n\nमी तुझा शेती मित्र **कृषी AI**. आपल्या **${regionName}** भागातील शेती, औषध खरेदी लिंक्स, शेती यंत्रे आणि बाजारभावांची सर्व पक्की माहिती माझ्याकडे आहे.\n\nतुला कोणत्याही औषधाचे दर (सस्ती vs प्रीमियम), ऑनलाईन खरेदी लिंक्स, स्थानिक दुकाने किंवा शेतीसाठी लागणाऱ्या आधुनिक यंत्रांविषयी विचारायचे असेल तर हक्काने विचार मित्रा!`
           : language === 'hi'
-          ? `🌿 **राम राम${user?.name ? ' ' + user.name : ' भाई'}! कैसे हो आप?** 🙏\n\nमैं आपका अपना डिजिटल कृषि मित्र **कृषि AI**। अपने **${regionName}** क्षेत्र की काली मिट्टी, फसलों और मौसम के बारे में जो भी सलाह चाहिए, मैं बिल्कुल एक दोस्त की तरह मदद करूँगा।\n\nबताइए, आज खेत में किस विषय पर मदद चाहिए?`
-          : `🌿 **Hey${user?.name ? ' ' + user.name : ' my friend'}! How are you doing today?** 🙏\n\nI'm **Krishi AI**, your friendly farming companion calibrated for **${regionName}**. Ask me anything about your field—weather windows, fertilizer dosages, pest treatments, live APMC rates, or subsidy form filling. What's on your mind today?`,
+          ? `🌿 **राम राम${user?.name ? ' ' + user.name : ' भाई'}! कैसे हो आप?** 🙏\n\nमैं आपका अपना डिजिटल कृषि मित्र **कृषि AI**। अपने **${regionName}** क्षेत्र के लिए कीटनाशक दवाओं की खरीद लिंक, किफायती बनाम प्रीमियम उत्पाद, कृषि मशीनरी और मौसम की पूरी जानकारी उपलब्ध है।`
+          : `🌿 **Hey${user?.name ? ' ' + user.name : ' my friend'}! How are you doing today?** 🙏\n\nI'm **Krishi AI**, your dedicated agronomic companion calibrated for **${regionName}**. Ask me about pest products, buying links (Affordable vs Premium), local store directories, and required farm machinery!`,
         suggestions: [
-          language === 'mr' ? "📝 योजना अर्ज कसा करावा?" : "📝 Scheme Form Step Guide",
-          language === 'mr' ? `🌦️ ${regionName.split('/')[0]} हवामान` : `🌦️ Weather in ${regionName.split('/')[0]}`,
-          language === 'mr' ? `🌱 ${majorCrop} खत सल्ला` : `🌱 ${majorCrop} Fertilizer`,
+          language === 'mr' ? "🛒 औषध खरेदी लिंक्स व दुकाने" : "🛒 Pest Medicine Buy Links",
+          language === 'mr' ? "🚜 आवश्यक शेती यंत्रे व स्प्रेअर" : "🚜 Required Farm Machinery",
           language === 'mr' ? `💰 ${apmcName} भाव` : `💰 ${apmcName} Rates`,
-          language === 'mr' ? "🐛 कीड नियंत्रण उपाय" : "🐛 Pest Treatment"
+          language === 'mr' ? `🌦️ ${regionName.split('/')[0]} हवामान` : `🌦️ Weather in ${regionName.split('/')[0]}`,
+          language === 'mr' ? "📝 योजना अर्ज कसा करावा?" : "📝 Scheme Form Guide"
         ],
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
@@ -119,61 +117,61 @@ export default function Chatbot() {
   useEffect(() => {
     if (isOpen) {
       scrollToBottom();
-      setHasUnread(false);
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen, messages]);
 
-  const toggleVoiceInput = () => {
+  const toggleListening = () => {
     if (!recognitionRef.current) {
-      alert(language === 'mr' ? 'आपल्या ब्राउझरमध्ये व्हॉइस इनपुट समर्थित नाही.' : 'Voice recognition is not supported in this browser.');
+      alert(language === 'mr' ? 'आपल्या ब्राऊझरमध्ये व्हॉइस इनपुट उपलब्ध नाही.' : 'Voice input not supported in this browser.');
       return;
     }
+
     if (isListening) {
-      try { recognitionRef.current.stop(); } catch (e) {}
+      recognitionRef.current.stop();
       setIsListening(false);
     } else {
       try {
-        recognitionRef.current.lang = language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'en-IN';
         recognitionRef.current.start();
         setIsListening(true);
       } catch (err) {
-        console.warn('Speech recognition error:', err);
-        setIsListening(false);
+        console.error('Speech recognition start error:', err);
       }
     }
   };
 
-  const speakMessage = (msgId, text) => {
+  const speakMessage = (id, text) => {
     if (!('speechSynthesis' in window)) return;
 
-    try {
-      if (activeSpeechId === msgId) {
-        window.speechSynthesis.cancel();
-        setActiveSpeechId(null);
-        return;
-      }
-
+    if (activeSpeechId === id) {
       window.speechSynthesis.cancel();
-      const cleanText = (text || '').replace(/[*#•_]/g, '').replace(/[\u{1F600}-\u{1F6FF}]/gu, '');
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'en-IN';
-      utterance.rate = 0.95;
-
-      utterance.onend = () => setActiveSpeechId(null);
-      utterance.onerror = () => setActiveSpeechId(null);
-
-      setActiveSpeechId(msgId);
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.warn('Speech synthesis error:', e);
       setActiveSpeechId(null);
+      return;
     }
+
+    window.speechSynthesis.cancel();
+
+    // Clean markdown symbols for cleaner audio narration
+    const cleanText = text
+      .replace(/(\*\*|\*|#|_|\[.*?\]\(.*?\)|`)/g, '')
+      .replace(/(http[s]?:\/\/[^\s]+)/g, '')
+      .replace(/[•\-\+]/g, ' ')
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'en-IN';
+    utterance.rate = 0.95;
+
+    utterance.onend = () => setActiveSpeechId(null);
+    utterance.onerror = () => setActiveSpeechId(null);
+
+    setActiveSpeechId(id);
+    window.speechSynthesis.speak(utterance);
   };
 
-  const handleSend = async (textToSend) => {
-    const query = (textToSend || input || '').trim();
-    if (!query || loading) return;
+  const handleSend = async (userQuery) => {
+    const query = userQuery || input.trim();
+    if (!query) return;
 
     const userMsg = {
       id: 'user-' + Date.now(),
@@ -187,14 +185,8 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      const curTopo = selectedTopology || DEFAULT_TOPOLOGY;
       const response = await chatbotService.sendMessage(query, {
-        location: {
-          ...activeLocation,
-          name: curTopo.name,
-          soilType: curTopo.soilType,
-          apmcMandi: curTopo.apmcHub
-        },
+        location: activeLocation,
         language,
         user
       });
@@ -217,13 +209,64 @@ export default function Chatbot() {
         text: language === 'mr'
           ? "⚠️ माहिती मिळवताना अडचण आली. कृपया पुन्हा प्रयत्न करा."
           : "⚠️ Error processing request. Please retry.",
-        suggestions: [t('sugWeather'), t('sugSoil')],
+        suggestions: ["🛒 औषध खरेदी लिंक्स", "🚜 आवश्यक शेती यंत्रे"],
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper to parse markdown line into formatted components including markdown links [Title](url)
+  const renderFormattedLine = (line) => {
+    // Check if line contains markdown links: [Title](url)
+    const linkRegex = /\[(.*?)\]\((https?:\/\/.*?)\)/g;
+    if (linkRegex.test(line)) {
+      const parts = [];
+      let lastIndex = 0;
+      let match;
+      const re = /\[(.*?)\]\((https?:\/\/.*?)\)/g;
+
+      while ((match = re.exec(line)) !== null) {
+        if (match.index > lastIndex) {
+          parts.push(line.substring(lastIndex, match.index));
+        }
+        const title = match[1];
+        const url = match[2];
+        parts.push(
+          <a
+            key={match.index}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '3px',
+              backgroundColor: '#e0f2fe',
+              color: '#0369a1',
+              border: '1px solid #bae6fd',
+              borderRadius: '6px',
+              padding: '1px 6px',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              textDecoration: 'none',
+              margin: '0 2px'
+            }}
+          >
+            🛒 {title} ↗
+          </a>
+        );
+        lastIndex = re.lastIndex;
+      }
+      if (lastIndex < line.length) {
+        parts.push(line.substring(lastIndex));
+      }
+      return <span>{parts}</span>;
+    }
+
+    return line;
   };
 
   // Helper to render formatted text with action shortcuts safely
@@ -236,6 +279,7 @@ export default function Chatbot() {
           if (!line || !line.trim()) return <div key={idx} style={{ height: '6px' }} />;
           
           const isBullet = line.startsWith('•') || line.startsWith('1.') || line.startsWith('2.') || line.startsWith('3.') || line.startsWith('4.') || line.startsWith('5.') || line.startsWith('१.') || line.startsWith('२.') || line.startsWith('३.');
+          const isHeading = line.startsWith('###') || line.startsWith('##') || line.startsWith('**') || line.startsWith('🌟') || line.startsWith('💰') || line.startsWith('🌿') || line.startsWith('🚜') || line.startsWith('🏬');
           
           return (
             <div
@@ -243,23 +287,33 @@ export default function Chatbot() {
               style={{
                 marginBottom: '3px',
                 paddingLeft: isBullet ? '0.5rem' : '0',
-                fontWeight: line.startsWith('**') || line.startsWith('🌿') || line.startsWith('🌦️') || line.startsWith('💰') || line.startsWith('🌱') || line.startsWith('🐛') || line.startsWith('🏛️') || line.startsWith('💧') ? '700' : 'normal'
+                fontWeight: isHeading ? '700' : 'normal',
+                color: line.startsWith('### 🌟') ? '#7e22ce' : line.startsWith('### 💰') ? '#15803d' : line.startsWith('### 🌿') ? '#047857' : 'inherit'
               }}
             >
-              {line}
+              {renderFormattedLine(line)}
             </div>
           );
         })}
 
         {/* Action Shortcuts */}
         <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.6rem', flexWrap: 'wrap' }}>
-          {(text.includes('Weather') || text.includes('हवामान') || text.includes('मौसम')) && (
+          {(text.includes('Buy') || text.includes('Product') || text.includes('खरेदी') || text.includes('औषध') || text.includes('दवा') || text.includes('Coragen') || text.includes('Ampligo')) && (
             <button
-              onClick={() => { setIsOpen(false); navigate('/dashboard/weather'); }}
+              onClick={() => { setIsOpen(false); navigate('/dashboard/market'); }}
               className="btn btn-sm btn-outline"
-              style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px' }}
+              style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px', color: '#16a34a', borderColor: '#86efac' }}
             >
-              🌤️ View Weather Page
+              🛒 Open Input Store Prices
+            </button>
+          )}
+          {(text.includes('Machinery') || text.includes('Sprayer') || text.includes('यंत्र') || text.includes('ड्रोन') || text.includes('स्प्रेअर') || text.includes('Pest') || text.includes('कीड')) && (
+            <button
+              onClick={() => { setIsOpen(false); navigate('/dashboard/pest'); }}
+              className="btn btn-sm btn-outline"
+              style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px', color: '#9333ea', borderColor: '#d8b4fe' }}
+            >
+              📸 AI Pest Diagnosis & Tech
             </button>
           )}
           {(text.includes('Mandi') || text.includes('बाजारभाव') || text.includes('भाव') || text.includes('APMC')) && (
@@ -271,43 +325,14 @@ export default function Chatbot() {
               💰 Check APMC Mandi
             </button>
           )}
-          {(text.includes('Soil') || text.includes('NPK') || text.includes('माती') || text.includes('खत')) && (
+          {(text.includes('Weather') || text.includes('हवामान') || text.includes('मौसम')) && (
             <button
-              onClick={() => { setIsOpen(false); navigate('/dashboard/soil'); }}
+              onClick={() => { setIsOpen(false); navigate('/dashboard/weather'); }}
               className="btn btn-sm btn-outline"
               style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px' }}
             >
-              🌱 Soil Health Profile
+              🌤️ View Weather Page
             </button>
-          )}
-          {(text.includes('Pest') || text.includes('कीड') || text.includes('रोग') || text.includes('Thrips')) && (
-            <button
-              onClick={() => { setIsOpen(false); navigate('/dashboard/pest'); }}
-              className="btn btn-sm btn-outline"
-              style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px' }}
-            >
-              📸 AI Pest Scanner
-            </button>
-          )}
-          {(text.includes('Scheme') || text.includes('योजना') || text.includes('MahaDBT') || text.includes('PM-KISAN') || text.includes('अर्ज') || text.includes('फॉर्म')) && (
-            <>
-              <button
-                onClick={() => { setIsOpen(false); navigate('/dashboard/schemes'); }}
-                className="btn btn-sm btn-outline"
-                style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px' }}
-              >
-                🏛️ View Schemes Page
-              </button>
-              <a
-                href="https://mahadbt.maharashtra.gov.in"
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-sm btn-outline"
-                style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px', textDecoration: 'none', color: '#15803d', borderColor: '#86efac' }}
-              >
-                🌐 MahaDBT Official Portal
-              </a>
-            </>
           )}
           <a
             href="tel:18001801551"
@@ -328,7 +353,7 @@ export default function Chatbot() {
     <div className="chatbot-wrapper">
       {/* CHATBOT WINDOW */}
       {isOpen && (
-        <div className="chatbot-window" style={{ width: '420px', height: '580px' }}>
+        <div className="chatbot-window" style={{ width: '430px', height: '590px' }}>
           {/* HEADER */}
           <div className="chatbot-header" style={{ padding: '0.8rem 1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -353,7 +378,7 @@ export default function Chatbot() {
                   {t('chatTitle')}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: '#bbf7d0', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <span>Topology-Grounded AI</span> &bull; <span>Live</span>
+                  <span>Agronomic Intelligence</span> &bull; <span>Live</span>
                 </div>
               </div>
             </div>
@@ -455,12 +480,13 @@ export default function Chatbot() {
 
                 {/* Suggestions Chips */}
                 {msg.suggestions && msg.suggestions.length > 0 && (
-                  <div className="chat-suggestions">
+                  <div className="chatbot-suggestions" style={{ marginTop: '0.45rem', display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
                     {msg.suggestions.map((sug, sIdx) => (
                       <button
                         key={sIdx}
-                        className="chat-suggestion-chip"
+                        className="suggestion-chip"
                         onClick={() => handleSend(sug)}
+                        style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem', borderRadius: '12px' }}
                       >
                         {sug}
                       </button>
@@ -472,83 +498,64 @@ export default function Chatbot() {
 
             {loading && (
               <div className="chat-message bot">
-                <div className="message-bubble typing-bubble">
-                  <div className="typing-dot" />
-                  <div className="typing-dot" />
-                  <div className="typing-dot" />
+                <div className="message-bubble" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
+                  <span className="loading-spinner" style={{ width: '14px', height: '14px' }} />
+                  <span>Thinking...</span>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* INPUT AREA */}
-          <div className="chatbot-input-area">
-            {/* Voice Input Mic Button */}
+          {/* INPUT FORM */}
+          <form className="chatbot-input-form" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
             <button
-              onClick={toggleVoiceInput}
+              type="button"
+              className={`chatbot-mic-btn ${isListening ? 'listening' : ''}`}
+              onClick={toggleListening}
+              title={isListening ? "Listening..." : "Click to Speak in Marathi / Hindi / English"}
               style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
+                backgroundColor: isListening ? '#fee2e2' : 'transparent',
+                color: isListening ? '#dc2626' : 'var(--text-muted)',
                 border: 'none',
-                background: isListening ? '#ef4444' : 'var(--primary-50)',
-                color: isListening ? '#ffffff' : 'var(--primary-700)',
                 cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.05rem',
-                transition: 'all 0.2s ease',
-                boxShadow: isListening ? '0 0 10px rgba(239, 68, 68, 0.6)' : 'none'
+                fontSize: '1.1rem',
+                padding: '0 0.5rem'
               }}
-              title={isListening ? "Listening... Click to stop" : "Click to speak in Marathi / Hindi / English"}
             >
-              {isListening ? '🎙️' : '🎤'}
+              {isListening ? '🔴' : '🎙️'}
             </button>
 
             <input
               ref={inputRef}
               type="text"
               className="chatbot-input"
-              placeholder={
-                isListening
-                  ? (language === 'mr' ? 'ऐकत आहे... बोला' : 'Listening... Speak now')
-                  : (language === 'mr' ? 'शेती, हवामान किंवा भावाविषयी विचारा...' : t('chatPlaceholder'))
-              }
+              placeholder={language === 'mr' ? 'औषध खरेदी, यंत्रे, खते, बाजारभाव विचारा...' : 'Ask about pest buying links, machinery, prices...'}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               disabled={loading}
             />
 
             <button
-              className="btn btn-sm btn-primary"
-              onClick={() => handleSend()}
+              type="submit"
+              className="btn btn-primary chatbot-send-btn"
               disabled={loading || !input.trim()}
-              style={{ borderRadius: 'var(--radius-pill)', padding: '0.45rem 0.85rem' }}
+              style={{ padding: '0.5rem 0.85rem', borderRadius: 'var(--radius-md)' }}
             >
               ➤
             </button>
-          </div>
+          </form>
         </div>
       )}
 
-      {/* LAUNCHER BUTTON */}
+      {/* FLOATING TRIGGER BUTTON */}
       <button
-        className={`chatbot-launcher-btn ${isOpen ? 'active' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Open Krishi AI Assistant"
+        className="chatbot-trigger"
+        onClick={() => { setIsOpen(!isOpen); setHasUnread(false); }}
+        title="Open Krishi AI Assistant"
       >
-        {isOpen ? (
-          <span style={{ fontSize: '1.25rem' }}>✕</span>
-        ) : (
-          <>
-            <span style={{ fontSize: '1.35rem' }}>💬</span>
-            <span>{t('chatLauncher')}</span>
-            {hasUnread && <span className="chatbot-badge">1</span>}
-          </>
-        )}
+        <span style={{ fontSize: '1.4rem' }}>💬</span>
+        {hasUnread && <span className="chatbot-badge">1</span>}
       </button>
     </div>
   );
