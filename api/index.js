@@ -15,7 +15,8 @@ async function connectToDatabase() {
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 10000
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 15000
     }).then((m) => {
       console.log('🍃 MongoDB Atlas Connected (Vercel Serverless)');
       return m;
@@ -48,8 +49,34 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
+// Helper to parse request body safely in Serverless environments
+async function parseBody(req) {
+  if (req.body) {
+    if (typeof req.body === 'string') {
+      try { return JSON.parse(req.body); } catch (e) { return {}; }
+    }
+    if (typeof req.body === 'object') {
+      return req.body;
+    }
+  }
+
+  // Handle stream if body not pre-parsed
+  return new Promise((resolve) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        resolve({});
+      }
+    });
+    req.on('error', () => resolve({}));
+  });
+}
+
 module.exports = async function handler(req, res) {
-  // Global CORS Headers
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -80,12 +107,7 @@ module.exports = async function handler(req, res) {
     if (url.includes('register')) {
       if (method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-      let body = req.body;
-      if (typeof body === 'string') {
-        try { body = JSON.parse(body); } catch (e) {}
-      }
-      body = body || {};
-
+      const body = await parseBody(req);
       const { name, email, password, role, location } = body;
 
       if (!name || !name.trim()) return res.status(400).json({ error: 'Please enter your full name.' });
@@ -123,7 +145,7 @@ module.exports = async function handler(req, res) {
         { expiresIn: '30d' }
       );
 
-      console.log('🍃 Registered new user in Atlas:', normalizedEmail);
+      console.log('🍃 Successfully registered user in Atlas:', normalizedEmail);
 
       return res.status(201).json({
         status: 'success',
@@ -144,12 +166,7 @@ module.exports = async function handler(req, res) {
     if (url.includes('login')) {
       if (method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-      let body = req.body;
-      if (typeof body === 'string') {
-        try { body = JSON.parse(body); } catch (e) {}
-      }
-      body = body || {};
-
+      const body = await parseBody(req);
       const { email, password } = body;
       if (!email || !password) return res.status(400).json({ error: 'Please provide both email and password.' });
 
@@ -223,9 +240,10 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    return res.status(404).json({ error: `API endpoint not found for URL: ${url}` });
+    return res.status(404).json({ error: `API endpoint not found: ${url}` });
   } catch (err) {
     console.error('Serverless error:', err);
-    return res.status(500).json({ error: err.message || 'Internal Server Error' });
+    const errorMsg = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+    return res.status(500).json({ error: errorMsg });
   }
 };

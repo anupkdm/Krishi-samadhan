@@ -13,7 +13,7 @@ function getBaseUrl() {
     if (window.location.port === '5173' || window.location.port === '3000') {
       return `http://${hostname}:5000/api`;
     }
-    // Production deployed domain
+    // Production deployed domain (Vercel)
     return `${window.location.origin}/api`;
   }
 
@@ -42,6 +42,15 @@ function buildUrl(endpoint, params = {}) {
   return url.toString();
 }
 
+function parseErrorMessage(data, status) {
+  if (!data) return `Request failed with status ${status}`;
+  if (typeof data.error === 'string') return data.error;
+  if (data.error && typeof data.error.message === 'string') return data.error.message;
+  if (typeof data.message === 'string') return data.message;
+  if (typeof data.error === 'object') return JSON.stringify(data.error);
+  return `Request failed with status ${status}`;
+}
+
 const api = {
   async get(endpoint, params = {}) {
     const requestUrl = buildUrl(endpoint, params);
@@ -53,7 +62,7 @@ const api = {
       const res = await fetch(requestUrl, { headers });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || `Request failed with status ${res.status}`);
+        throw new Error(parseErrorMessage(err, res.status));
       }
       return await res.json();
     } catch (err) {
@@ -81,7 +90,7 @@ const api = {
       
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || data.message || `Request failed with status ${res.status}`);
+        throw new Error(parseErrorMessage(data, res.status));
       }
       return data;
     } catch (err) {
