@@ -9,22 +9,23 @@ const app = express();
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://anupkadam:anup96k@cluster0.megoa4x.mongodb.net/krishi_samadhan?retryWrites=true&w=majority';
 const JWT_SECRET = process.env.JWT_SECRET || 'krishi-samadhan-jwt-secret-key-2026';
 
-// Enable CORS for Vercel and all origins
+// CORS Configuration
 app.use(cors({
   origin: true,
   credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-// Mongoose Connection Caching for Serverless Invocations
+// Global Mongoose Cache across Serverless Invocations
 let cached = global.mongoose;
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
 async function connectToDatabase() {
-  if (cached.conn) {
+  if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;
   }
 
@@ -35,7 +36,7 @@ async function connectToDatabase() {
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
-      console.log('🍃 MongoDB Atlas Connected (Serverless)');
+      console.log('🍃 MongoDB Atlas Connected (Vercel Serverless api/index.js)');
       return m;
     });
   }
@@ -71,39 +72,20 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-// Middleware to ensure DB connection before handling requests
+// Auto-connect middleware
 app.use(async (req, res, next) => {
   try {
     await connectToDatabase();
   } catch (err) {
-    console.error('Database connection failure:', err.message);
+    console.error('Mongo connection error:', err.message);
   }
   next();
 });
 
-// Health check endpoint
-app.get('/api/health', async (req, res) => {
+// Handler: Register
+const handleRegister = async (req, res) => {
   try {
-    const count = await User.countDocuments();
-    res.json({
-      status: 'healthy',
-      database: 'MongoDB Atlas Connected',
-      totalUsers: count,
-      timestamp: new Date().toISOString()
-    });
-  } catch (err) {
-    res.json({
-      status: 'degraded',
-      error: err.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-});
-
-// 1. REGISTER
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { name, email, password, role, location } = req.body;
+    const { name, email, password, role, location } = req.body || {};
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Please enter your full name.' });
@@ -116,9 +98,6 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const userRole = role || 'farmer';
-    const userLocation = location || 'Maharashtra, India';
-
     await connectToDatabase();
 
     const existingUser = await User.findOne({ email: normalizedEmail });
@@ -127,6 +106,8 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     const password_hash = await bcrypt.hash(password, 10);
+    const userRole = role || 'farmer';
+    const userLocation = location || 'Maharashtra, India';
 
     const newUser = await User.create({
       name: name.trim(),
@@ -149,7 +130,9 @@ app.post('/api/auth/register', async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    res.status(201).json({
+    console.log(`✅ New user registered in Atlas: ${normalizedEmail}`);
+
+    return res.status(201).json({
       status: 'success',
       message: 'Account registered successfully in MongoDB Atlas!',
       token,
@@ -163,27 +146,26 @@ app.post('/api/auth/register', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Registration error:', err);
-    res.status(500).json({ error: err.message || 'Internal server error during registration.' });
+    console.error('Registration serverless error:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error during registration.' });
   }
-});
+};
 
-// 2. LOGIN
-app.post('/api/auth/login', async (req, res) => {
+// Handler: Login
+const handleLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Please provide both email and password.' });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-
     await connectToDatabase();
 
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      // Demo farmer account fallback
+      // Demo farmer auto-provision
       if (normalizedEmail === 'farmer@krishisamadhan.in' && password === 'farmer123') {
         const hash = await bcrypt.hash('farmer123', 10);
         const demoUser = await User.create({
@@ -210,7 +192,9 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    res.json({
+    console.log(`✅ User authenticated in Atlas: ${normalizedEmail}`);
+
+    return res.json({
       status: 'success',
       message: 'Logged in successfully!',
       token,
@@ -224,13 +208,13 @@ app.post('/api/auth/login', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: err.message || 'Internal server error during login.' });
+    console.error('Login serverless error:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error during login.' });
   }
-});
+};
 
-// 3. GET CURRENT USER
-app.get('/api/auth/me', async (req, res) => {
+// Handler: Get Me
+const handleMe = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -246,7 +230,7 @@ app.get('/api/auth/me', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({
+    return res.json({
       status: 'success',
       user: {
         id: user._id.toString(),
@@ -258,8 +242,34 @@ app.get('/api/auth/me', async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(401).json({ error: 'Invalid or expired session token' });
+    return res.status(401).json({ error: 'Invalid or expired session token' });
   }
-});
+};
+
+// Handler: Health
+const handleHealth = async (req, res) => {
+  try {
+    await connectToDatabase();
+    const count = await User.countDocuments();
+    return res.json({
+      status: 'healthy',
+      database: 'MongoDB Atlas Connected',
+      totalUsers: count,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    return res.json({
+      status: 'degraded',
+      error: err.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
+// Route Registrations with multi-prefix matching
+app.post(['/api/auth/register', '/auth/register', '/register'], handleRegister);
+app.post(['/api/auth/login', '/auth/login', '/login'], handleLogin);
+app.get(['/api/auth/me', '/auth/me', '/me'], handleMe);
+app.get(['/api/health', '/health', '/api', '/'], handleHealth);
 
 module.exports = app;
