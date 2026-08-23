@@ -1,6 +1,5 @@
 import api from './api';
 
-// Manage local user database in localStorage for static deployment (e.g. Vercel)
 const USERS_STORAGE_KEY = 'ks_registered_users';
 
 function getStoredUsers() {
@@ -23,19 +22,34 @@ function saveStoredUser(user) {
 }
 
 export const register = async (name, email, password, role, location) => {
+  const normalizedEmail = email.trim().toLowerCase();
+
   try {
-    const res = await api.post('/auth/register', { name, email, password, role, location });
-    if (res && res.token) {
+    const res = await api.post('/auth/register', {
+      name: name.trim(),
+      email: normalizedEmail,
+      password,
+      role: role || 'farmer',
+      location: location || 'Maharashtra, India'
+    });
+
+    if (res && res.token && res.user) {
+      localStorage.setItem('token', res.token);
+      localStorage.setItem('user', JSON.stringify(res.user));
+      saveStoredUser({ ...res.user, password });
       return res;
     }
   } catch (err) {
-    console.warn('Backend API unavailable or static host, using client-side auth fallback:', err.message);
+    console.error('Backend registration error:', err.message);
+    // If backend returns a specific validation error, surface it directly to the user
+    if (!err.message.includes('Cannot reach') && !err.message.includes('Failed to fetch')) {
+      throw err;
+    }
   }
 
-  // Client-side fallback for Vercel static deployment
-  const normalizedEmail = email.trim().toLowerCase();
+  // Resilient offline fallback
   const storedUser = {
-    id: Date.now(),
+    id: 'usr-' + Date.now(),
     name: name.trim(),
     email: normalizedEmail,
     role: role || 'farmer',
@@ -61,42 +75,51 @@ export const register = async (name, email, password, role, location) => {
 };
 
 export const login = async (email, password) => {
+  const normalizedEmail = email.trim().toLowerCase();
+
   try {
-    const res = await api.post('/auth/login', { email, password });
-    if (res && res.token) {
+    const res = await api.post('/auth/login', {
+      email: normalizedEmail,
+      password
+    });
+
+    if (res && res.token && res.user) {
+      localStorage.setItem('token', res.token);
+      localStorage.setItem('user', JSON.stringify(res.user));
       return res;
     }
   } catch (err) {
-    console.warn('Backend API unavailable or static host, using client-side auth fallback:', err.message);
-  }
-
-  // Client-side fallback for Vercel static deployment
-  const normalizedEmail = email.trim().toLowerCase();
-  const storedUsers = getStoredUsers();
-  const existingUser = storedUsers.find(u => u.email.toLowerCase() === normalizedEmail);
-
-  if (existingUser) {
-    if (existingUser.password === password || password.length >= 4) {
-      const token = 'jwt-session-token-' + Date.now();
-      const user = {
-        id: existingUser.id,
-        name: existingUser.name,
-        email: existingUser.email,
-        role: existingUser.role,
-        location: existingUser.location
-      };
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      return { status: 'success', token, user };
+    console.error('Backend login error:', err.message);
+    // If backend returned invalid credentials or specific error, surface it
+    if (!err.message.includes('Cannot reach') && !err.message.includes('Failed to fetch')) {
+      throw err;
     }
   }
 
+  // Resilient fallback for saved local credentials
+  const storedUsers = getStoredUsers();
+  const existingUser = storedUsers.find(u => u.email.toLowerCase() === normalizedEmail);
+
+  if (existingUser && (existingUser.password === password || password.length >= 4)) {
+    const token = 'jwt-session-token-' + Date.now();
+    const user = {
+      id: existingUser.id,
+      name: existingUser.name,
+      email: existingUser.email,
+      role: existingUser.role,
+      location: existingUser.location
+    };
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    return { status: 'success', token, user };
+  }
+
   // Demo accounts
-  if (normalizedEmail === 'farmer@krishisamadhan.in' || normalizedEmail === 'admin@krishisamadhan.in' || password.length >= 6) {
+  if (normalizedEmail === 'farmer@krishisamadhan.in' || normalizedEmail === 'admin@krishisamadhan.in') {
     const isFarmer = normalizedEmail.includes('farmer');
     const token = 'jwt-demo-token-' + Date.now();
     const user = {
-      id: Date.now(),
+      id: isFarmer ? 'farmer-demo-id' : 'admin-demo-id',
       name: isFarmer ? 'Ramesh Patil' : 'Krishi Extension Officer',
       email: normalizedEmail,
       role: isFarmer ? 'farmer' : 'authority',
@@ -107,12 +130,16 @@ export const login = async (email, password) => {
     return { status: 'success', token, user };
   }
 
-  throw new Error('Invalid email or password. Please verify your credentials.');
+  throw new Error('Invalid email or password. Please verify your credentials or register a new account.');
 };
 
 export const getProfile = async () => {
   try {
-    return await api.get('/auth/me');
+    const res = await api.get('/auth/me');
+    if (res && res.user) {
+      localStorage.setItem('user', JSON.stringify(res.user));
+      return res;
+    }
   } catch {
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
