@@ -7,10 +7,18 @@ import { useAuth } from '../context/AuthContext';
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { t } = useLanguage();
   const { user, activeLocation, openProfileModal } = useAuth();
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const toggleSidebar = () => {
+    if (window.innerWidth <= 1024) {
+      setSidebarOpen(prev => !prev);
+    } else {
+      setSidebarCollapsed(prev => !prev);
+    }
+  };
+
   const closeSidebar = () => setSidebarOpen(false);
 
   const getInitials = (name) => {
@@ -19,7 +27,7 @@ export default function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="dashboard-layout">
+    <div className={`dashboard-layout ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       {/* Mobile Backdrop Overlay */}
       {sidebarOpen && (
         <div
@@ -30,22 +38,37 @@ export default function DashboardLayout({ children }) {
       )}
 
       {/* Persistent / Off-canvas Sidebar */}
-      <DashboardSidebar isOpen={sidebarOpen} toggleSidebar={closeSidebar} />
+      <DashboardSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} isCollapsed={sidebarCollapsed} />
 
       {/* Main Content Area */}
       <div className="dashboard-main-wrapper">
-        {/* Desktop / Tablet Top Action Header (Hidden on Mobile) */}
+        {/* Desktop / Tablet Top Action Header */}
         <header
           className="dashboard-top-bar desktop-only"
           style={{
             display: 'flex',
-            justifyContent: 'flex-end',
+            justifyContent: 'space-between',
             alignItems: 'center',
             padding: '0.75rem 2.5rem 0',
             background: 'transparent',
             gap: '1.25rem'
           }}
         >
+          {/* Top Left Menu Toggle Button */}
+          <button
+            onClick={toggleSidebar}
+            className="desktop-menu-toggle-btn"
+            title={sidebarCollapsed ? "Slide In Menu (Expand)" : "Slide Out Menu (Collapse)"}
+            aria-label="Toggle Sidebar Menu"
+          >
+            <span>☰</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: '800' }}>
+              {sidebarCollapsed ? 'Menu' : ''}
+            </span>
+          </button>
+
+          {/* Right Top Header Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
           {/* Active Location Badge */}
           <button
             onClick={openProfileModal}
@@ -117,6 +140,7 @@ export default function DashboardLayout({ children }) {
               </span>
             </div>
           </button>
+          </div>
         </header>
 
         {/* Mobile Top App Bar (Only on Mobile screens) */}

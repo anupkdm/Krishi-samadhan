@@ -22,26 +22,26 @@ export default function DashboardSidebar({ isOpen, toggleSidebar }) {
       <div className="sidebar-brand">
         <Link
           to="/"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--primary-900)', textDecoration: 'none', flexGrow: 1 }}
-          onClick={toggleSidebar}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--primary-900)', textDecoration: 'none', flexGrow: 1, minWidth: 0 }}
         >
           <img
             src="/logo.png"
             alt="Agri Samadhan Logo"
-            style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '50%' }}
+            style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '50%', flexShrink: 0 }}
           />
-          <span style={{ fontWeight: '800', fontSize: '1.15rem', letterSpacing: '-0.02em' }}>
+          <span style={{ fontWeight: '800', fontSize: '1.15rem', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
             {t('brandName')}
           </span>
         </Link>
 
-        {/* Mobile Close Button */}
+        {/* Menu Toggle Button in Top Corner of Sidebar */}
         <button
-          className="sidebar-close-btn mobile-only"
+          className="sidebar-toggle-btn"
           onClick={toggleSidebar}
-          aria-label="Close Sidebar Menu"
+          aria-label="Slide Menu In/Out"
+          title="Slide Menu In / Out"
         >
-          ✕
+          <span style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>☰</span>
         </button>
       </div>
 
