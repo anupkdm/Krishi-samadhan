@@ -29,20 +29,10 @@ export default function DashboardSidebar({ isOpen, toggleSidebar }) {
             alt="Agri Samadhan Logo"
             style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '50%', flexShrink: 0 }}
           />
-          <span style={{ fontWeight: '800', fontSize: '1.15rem', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+          <span style={{ fontWeight: '800', fontSize: '1.2rem', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
             {t('brandName')}
           </span>
         </Link>
-
-        {/* Menu Toggle Button in Top Corner of Sidebar */}
-        <button
-          className="sidebar-toggle-btn"
-          onClick={toggleSidebar}
-          aria-label="Slide Menu In/Out"
-          title="Slide Menu In / Out"
-        >
-          <span style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>☰</span>
-        </button>
       </div>
 
       <nav className="sidebar-nav">
