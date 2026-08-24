@@ -313,69 +313,108 @@ img, svg {
 }
 
 /* ==========================================================================
-   METRIC CARDS
+   METRIC CARDS & TABS (LEFT LOGO, RIGHT DATA ALIGNMENT)
    ========================================================================== */
-.metric-card {
-  background-color: var(--bg-card);
-  border-radius: var(--radius-lg);
+.metric-card,
+.weather-metric-tab {
+  background-color: #ffffff;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--border-light);
-  padding: 1.25rem;
+  padding: 1.15rem 1.35rem;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-shadow: var(--shadow-xs);
-  transition: all 0.2s ease;
+  align-items: center;
+  gap: 1.25rem;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
 }
 
-.metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-300);
+.metric-card:hover,
+.weather-metric-tab:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.09), 0 4px 8px rgba(0, 0, 0, 0.04);
 }
 
-.metric-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.5rem;
-}
-
-.metric-card-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.metric-card-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
-  background-color: var(--primary-50);
+.metric-tab-logo,
+.metric-icon-wrap {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.15rem;
+  font-size: 1.85rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
+.metric-tab-data,
+.metric-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  text-align: left;
+}
+
+.metric-tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.1rem;
+}
+
+.metric-tab-title,
+.metric-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.metric-tab-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.metric-tab-value-wrap,
 .metric-card-value-wrap {
   display: flex;
   align-items: baseline;
-  gap: 0.35rem;
-  margin: 0.2rem 0;
-  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
+.metric-tab-value,
 .metric-card-value {
-  font-size: clamp(1.4rem, 4vw, 1.85rem);
+  font-size: clamp(1.6rem, 3.5vw, 2.1rem);
   font-weight: 800;
   color: var(--primary-900);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
+.metric-tab-unit,
 .metric-card-unit {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 700;
   color: var(--text-muted);
+}
+
+.metric-tab-subdata {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ==========================================================================

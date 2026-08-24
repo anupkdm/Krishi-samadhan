@@ -189,64 +189,92 @@ const Weather = () => {
           📡 {language === 'mr' ? 'थेट हवामान सेन्सर व उपग्रह नोंदी (Live Telemetry)' : 'Real-Time Meteorological Sensor & Satellite Feed'}
         </div>
 
-        <div className="dashboard-metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-          {/* Temperature & Feels Like */}
-          <div className="metric-card" style={{ borderLeft: '4px solid #ef4444' }}>
-            <div className="metric-card-top">
-              <span className="metric-card-title">🌡️ {t('temperature')}</span>
-              <span className="metric-card-icon" style={{ background: '#fef2f2', color: '#ef4444' }}>🔥</span>
+        <div className="dashboard-metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+          {/* 1. Temperature & Feels Like */}
+          <div className="weather-metric-tab" style={{ borderLeft: '5px solid #ef4444' }}>
+            <div className="metric-tab-logo" style={{ background: 'linear-gradient(135deg, #fee2e2 0%, #ffedd5 100%)', border: '1.5px solid #fecaca' }}>
+              <span>🌡️</span>
             </div>
-            <div className="metric-card-value-wrap">
-              <span className="metric-card-value">{currentWeather?.temperature ?? 28.5}</span>
-              <span className="metric-card-unit">°C</span>
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Feels Like: <strong>{currentWeather?.feelsLike ?? 29.0}°C</strong> | Range: <strong>{forecastDays[0]?.minTemp}°–{forecastDays[0]?.maxTemp}°C</strong>
-            </div>
-          </div>
-
-          {/* Rainfall Rate */}
-          <div className="metric-card" style={{ borderLeft: '4px solid #3b82f6' }}>
-            <div className="metric-card-top">
-              <span className="metric-card-title">🌧️ {t('precipitation')}</span>
-              <span className="metric-card-icon" style={{ background: '#eff6ff', color: '#3b82f6' }}>💧</span>
-            </div>
-            <div className="metric-card-value-wrap">
-              <span className="metric-card-value">{currentWeather?.precipitation ?? 0.0}</span>
-              <span className="metric-card-unit">mm/hr</span>
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Today: <strong>{forecastDays[0]?.rain ?? 0} mm</strong> ({forecastDays[0]?.precipProb ?? 10}% probability)
+            <div className="metric-tab-data">
+              <div className="metric-tab-header">
+                <span className="metric-tab-title">{t('temperature')}</span>
+                <span className="metric-tab-pill" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+                  🔥 Live Temp
+                </span>
+              </div>
+              <div className="metric-tab-value-wrap">
+                <span className="metric-tab-value">{currentWeather?.temperature ?? 28.5}</span>
+                <span className="metric-tab-unit">°C</span>
+              </div>
+              <div className="metric-tab-subdata">
+                Feels Like: <strong>{currentWeather?.feelsLike ?? 29.0}°C</strong> | Range: <strong>{forecastDays[0]?.minTemp}°–{forecastDays[0]?.maxTemp}°C</strong>
+              </div>
             </div>
           </div>
 
-          {/* Relative Humidity */}
-          <div className="metric-card" style={{ borderLeft: '4px solid #10b981' }}>
-            <div className="metric-card-top">
-              <span className="metric-card-title">💧 {t('humidity')}</span>
-              <span className="metric-card-icon" style={{ background: '#f0fdf4', color: '#10b981' }}>🌿</span>
+          {/* 2. Rainfall / Precipitation */}
+          <div className="weather-metric-tab" style={{ borderLeft: '5px solid #3b82f6' }}>
+            <div className="metric-tab-logo" style={{ background: 'linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%)', border: '1.5px solid #bfdbfe' }}>
+              <span>🌧️</span>
             </div>
-            <div className="metric-card-value-wrap">
-              <span className="metric-card-value">{currentWeather?.humidity ?? 65}</span>
-              <span className="metric-card-unit">% RH</span>
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Dew Point: <strong>{currentWeather?.dewPoint ?? 19.5}°C</strong> (Optimal assimilation)
+            <div className="metric-tab-data">
+              <div className="metric-tab-header">
+                <span className="metric-tab-title">{t('precipitation')}</span>
+                <span className="metric-tab-pill" style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+                  💧 Radar Feed
+                </span>
+              </div>
+              <div className="metric-tab-value-wrap">
+                <span className="metric-tab-value">{currentWeather?.precipitation ?? 0.0}</span>
+                <span className="metric-tab-unit">mm/hr</span>
+              </div>
+              <div className="metric-tab-subdata">
+                Today: <strong>{forecastDays[0]?.rain ?? 0} mm</strong> ({forecastDays[0]?.precipProb ?? 10}% prob)
+              </div>
             </div>
           </div>
 
-          {/* Wind Speed & Direction */}
-          <div className="metric-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
-            <div className="metric-card-top">
-              <span className="metric-card-title">🌬️ {t('windSpeed')}</span>
-              <span className="metric-card-icon" style={{ background: '#f5f3ff', color: '#8b5cf6' }}>💨</span>
+          {/* 3. Relative Humidity */}
+          <div className="weather-metric-tab" style={{ borderLeft: '5px solid #10b981' }}>
+            <div className="metric-tab-logo" style={{ background: 'linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%)', border: '1.5px solid #bbf7d0' }}>
+              <span>💧</span>
             </div>
-            <div className="metric-card-value-wrap">
-              <span className="metric-card-value">{currentWeather?.windSpeed ?? 12.0}</span>
-              <span className="metric-card-unit">km/h</span>
+            <div className="metric-tab-data">
+              <div className="metric-tab-header">
+                <span className="metric-tab-title">{t('humidity')}</span>
+                <span className="metric-tab-pill" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
+                  🌿 Ambient RH
+                </span>
+              </div>
+              <div className="metric-tab-value-wrap">
+                <span className="metric-tab-value">{currentWeather?.humidity ?? 65}</span>
+                <span className="metric-tab-unit">% RH</span>
+              </div>
+              <div className="metric-tab-subdata">
+                Dew Point: <strong>{currentWeather?.dewPoint ?? 19.5}°C</strong> (Optimal assimilation)
+              </div>
             </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Direction: <strong>{currentWeather?.windDirection ?? 'ENE'}</strong> | Gusts: <strong>{currentWeather?.windGusts ?? 15} km/h</strong>
+          </div>
+
+          {/* 4. Wind Speed & Direction */}
+          <div className="weather-metric-tab" style={{ borderLeft: '5px solid #8b5cf6' }}>
+            <div className="metric-tab-logo" style={{ background: 'linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%)', border: '1.5px solid #ddd6fe' }}>
+              <span>🌬️</span>
+            </div>
+            <div className="metric-tab-data">
+              <div className="metric-tab-header">
+                <span className="metric-tab-title">{t('windSpeed')}</span>
+                <span className="metric-tab-pill" style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe' }}>
+                  💨 Anemometer
+                </span>
+              </div>
+              <div className="metric-tab-value-wrap">
+                <span className="metric-tab-value">{currentWeather?.windSpeed ?? 12.0}</span>
+                <span className="metric-tab-unit">km/h</span>
+              </div>
+              <div className="metric-tab-subdata">
+                Direction: <strong>{currentWeather?.windDirection ?? 'ENE'}</strong> | Gusts: <strong>{currentWeather?.windGusts ?? 15} km/h</strong>
+              </div>
             </div>
           </div>
         </div>
