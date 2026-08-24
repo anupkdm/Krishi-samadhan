@@ -11,7 +11,13 @@ exports.analyzePest = async (req, res, next) => {
         const userId = req.user ? req.user.id : null;
         const apiKey = req.headers['x-gemini-api-key'] || req.body.apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
-        const analysis = await pestService.analyzeImage(crop, imageUrl, userId, { apiKey });
+        const analysis = await pestService.analyzeImage(crop, imageUrl, userId, {
+            apiKey,
+            filePath: req.file.path,
+            originalName: req.file.originalname,
+            mimetype: req.file.mimetype,
+            filename: req.file.filename
+        });
         res.json(analysis);
     } catch (err) {
         next(err);

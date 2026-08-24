@@ -132,16 +132,6 @@ const GIS = () => {
 
   // Modals
   const [showArchModal, setShowArchModal] = useState(false);
-  const [showSmsModal, setShowSmsModal] = useState(false);
-  const [smsData, setSmsData] = useState({
-    farmerName: 'Ramesh Patil',
-    phone: '+91 98221 44521',
-    crop: 'Onion (Kharif)',
-    customMessage: '',
-    status: 'idle',
-    response: null
-  });
-
   const [toastMessage, setToastMessage] = useState(null);
 
   // Sync coords on location change
@@ -174,38 +164,6 @@ const GIS = () => {
   // Handle Layer Toggle
   const toggleLayer = (key) => {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  // Send Farmer SMS
-  const handleSendSms = async () => {
-    setSmsData((prev) => ({ ...prev, status: 'sending' }));
-    try {
-      const res = await gisService.sendFarmerAlertSms({
-        farmerName: smsData.farmerName,
-        phone: smsData.phone,
-        crop: smsData.crop,
-        alertType: 'WEATHER_ALERT',
-        language,
-        customMessage: smsData.customMessage
-      });
-      setSmsData((prev) => ({ ...prev, status: 'sent', response: res }));
-      setToastMessage(`📲 SMS dispatched to ${smsData.farmerName} (${smsData.phone})!`);
-      setTimeout(() => setToastMessage(null), 5000);
-    } catch (err) {
-      setSmsData((prev) => ({ ...prev, status: 'error' }));
-    }
-  };
-
-  const openSmsForPlot = (plot) => {
-    setSmsData({
-      farmerName: plot.farmerName,
-      phone: plot.farmerPhone,
-      crop: plot.crop,
-      customMessage: plot.recommendedAction,
-      status: 'idle',
-      response: null
-    });
-    setShowSmsModal(true);
   };
 
   // Filtered Farm Plots
@@ -520,14 +478,6 @@ const GIS = () => {
               <div style={{ marginTop: '0.75rem', fontSize: '0.78rem', color: '#166534', background: '#dcfce7', padding: '0.5rem', borderRadius: 'var(--radius-sm)' }}>
                 <strong>Agronomic Directive:</strong> {selectedPlot.recommendedAction}
               </div>
-
-              <button
-                className="btn btn-sm btn-primary"
-                style={{ width: '100%', marginTop: '0.75rem' }}
-                onClick={() => openSmsForPlot(selectedPlot)}
-              >
-                📲 Dispatch Farmer SMS Alert
-              </button>
             </div>
           )}
         </div>
@@ -858,86 +808,9 @@ const GIS = () => {
           </div>
         </div>
       )}
-
-      {/* FARMER SMS DISPATCHER MODAL */}
-      {showSmsModal && (
-        <div className="gis-modal-backdrop" onClick={() => setShowSmsModal(false)}>
-          <div className="gis-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--primary-900)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span>📱</span> Dispatch Farmer SMS Notification
-              </h3>
-              <button
-                className="btn btn-sm"
-                onClick={() => setShowSmsModal(false)}
-                style={{ background: '#f3f4f6', border: 'none', cursor: 'pointer' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              <div>
-                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Farmer Recipient</label>
-                <input
-                  type="text"
-                  className="language-select-input"
-                  style={{ width: '100%', padding: '0.5rem' }}
-                  value={`${smsData.farmerName} (${smsData.crop})`}
-                  readOnly
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Mobile Phone (SMS Gateway)</label>
-                <input
-                  type="text"
-                  className="language-select-input"
-                  style={{ width: '100%', padding: '0.5rem' }}
-                  value={smsData.phone}
-                  onChange={(e) => setSmsData({ ...smsData, phone: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>SMS Directive Message</label>
-                <textarea
-                  rows={4}
-                  style={{ width: '100%', padding: '0.65rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '0.84rem' }}
-                  value={smsData.customMessage}
-                  onChange={(e) => setSmsData({ ...smsData, customMessage: e.target.value })}
-                  placeholder="Enter message for farmer..."
-                />
-              </div>
-
-              {smsData.status === 'sent' && (
-                <div style={{ background: '#dcfce7', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid #86efac', fontSize: '0.82rem', color: '#166534' }}>
-                  ✅ <strong>SMS Delivered:</strong> Alert ID #{smsData.response?.alertId || 'SMS-847291'} via Krishi Samadhan Gateway.
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <button
-                  className="btn btn-primary"
-                  style={{ flexGrow: 1 }}
-                  onClick={handleSendSms}
-                  disabled={smsData.status === 'sending'}
-                >
-                  {smsData.status === 'sending' ? 'Transmitting SMS...' : '🚀 Dispatch SMS Now'}
-                </button>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowSmsModal(false)}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   );
 };
 
 export default GIS;
+

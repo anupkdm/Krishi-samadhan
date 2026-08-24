@@ -30,12 +30,15 @@ export default function Chatbot() {
   const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [activeSpeechId, setActiveSpeechId] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
+  const [showCallout, setShowCallout] = useState(true);
   const [selectedTopology, setSelectedTopology] = useState(safePresets[0]);
 
   const messagesEndRef = useRef(null);
@@ -86,7 +89,6 @@ export default function Chatbot() {
   useEffect(() => {
     const curTopo = selectedTopology || DEFAULT_TOPOLOGY;
     const regionName = curTopo.name || 'Sangamner / Ahmednagar';
-    const majorCrop = (curTopo.majorCrops && curTopo.majorCrops[0]) || 'Onion';
     const apmcName = (curTopo.apmcHub || 'Sangamner APMC').split(' ')[0];
 
     setMessages([
@@ -108,7 +110,7 @@ export default function Chatbot() {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]);
-  }, [language, selectedTopology]);
+  }, [language, selectedTopology, user?.name]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -117,6 +119,7 @@ export default function Chatbot() {
   useEffect(() => {
     if (isOpen) {
       scrollToBottom();
+      setShowCallout(false);
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen, messages]);
@@ -155,7 +158,7 @@ export default function Chatbot() {
     const cleanText = text
       .replace(/(\*\*|\*|#|_|\[.*?\]\(.*?\)|`)/g, '')
       .replace(/(http[s]?:\/\/[^\s]+)/g, '')
-      .replace(/[•\-\+]/g, ' ')
+      .replace(/[•\-+]/g, ' ')
       .trim();
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
@@ -167,6 +170,14 @@ export default function Chatbot() {
 
     setActiveSpeechId(id);
     window.speechSynthesis.speak(utterance);
+  };
+
+  const copyMessage = (id, text) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
   };
 
   const handleSend = async (userQuery) => {
@@ -220,7 +231,6 @@ export default function Chatbot() {
 
   // Helper to parse markdown line into formatted components including markdown links [Title](url)
   const renderFormattedLine = (line) => {
-    // Check if line contains markdown links: [Title](url)
     const linkRegex = /\[(.*?)\]\((https?:\/\/.*?)\)/g;
     if (linkRegex.test(line)) {
       const parts = [];
@@ -240,22 +250,9 @@ export default function Chatbot() {
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '3px',
-              backgroundColor: '#e0f2fe',
-              color: '#0369a1',
-              border: '1px solid #bae6fd',
-              borderRadius: '6px',
-              padding: '1px 6px',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              textDecoration: 'none',
-              margin: '0 2px'
-            }}
+            className="chat-link-chip"
           >
-            🛒 {title} ↗
+            <span>🛒</span> {title} ↗
           </a>
         );
         lastIndex = re.lastIndex;
@@ -277,10 +274,10 @@ export default function Chatbot() {
       <div>
         {lines.map((line, idx) => {
           if (!line || !line.trim()) return <div key={idx} style={{ height: '6px' }} />;
-          
+
           const isBullet = line.startsWith('•') || line.startsWith('1.') || line.startsWith('2.') || line.startsWith('3.') || line.startsWith('4.') || line.startsWith('5.') || line.startsWith('१.') || line.startsWith('२.') || line.startsWith('३.');
           const isHeading = line.startsWith('###') || line.startsWith('##') || line.startsWith('**') || line.startsWith('🌟') || line.startsWith('💰') || line.startsWith('🌿') || line.startsWith('🚜') || line.startsWith('🏬');
-          
+
           return (
             <div
               key={idx}
@@ -296,51 +293,46 @@ export default function Chatbot() {
           );
         })}
 
-        {/* Action Shortcuts */}
-        <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.6rem', flexWrap: 'wrap' }}>
+        {/* Action Shortcuts Bar */}
+        <div className="chat-shortcut-bar">
           {(text.includes('Buy') || text.includes('Product') || text.includes('खरेदी') || text.includes('औषध') || text.includes('दवा') || text.includes('Coragen') || text.includes('Ampligo')) && (
             <button
               onClick={() => { setIsOpen(false); navigate('/dashboard/market'); }}
-              className="btn btn-sm btn-outline"
-              style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px', color: '#16a34a', borderColor: '#86efac' }}
+              className="chat-shortcut-chip store"
             >
-              🛒 Open Input Store Prices
+              🛒 {language === 'mr' ? 'खते व औषध दुकाने' : 'Input Store Prices'}
             </button>
           )}
           {(text.includes('Machinery') || text.includes('Sprayer') || text.includes('यंत्र') || text.includes('ड्रोन') || text.includes('स्प्रेअर') || text.includes('Pest') || text.includes('कीड')) && (
             <button
               onClick={() => { setIsOpen(false); navigate('/dashboard/pest'); }}
-              className="btn btn-sm btn-outline"
-              style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px', color: '#9333ea', borderColor: '#d8b4fe' }}
+              className="chat-shortcut-chip pest"
             >
-              📸 AI Pest Diagnosis & Tech
+              📸 {language === 'mr' ? 'कीड निदान व यंत्रे' : 'AI Pest Diagnosis & Tech'}
             </button>
           )}
           {(text.includes('Mandi') || text.includes('बाजारभाव') || text.includes('भाव') || text.includes('APMC')) && (
             <button
               onClick={() => { setIsOpen(false); navigate('/dashboard/market'); }}
-              className="btn btn-sm btn-outline"
-              style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px' }}
+              className="chat-shortcut-chip mandi"
             >
-              💰 Check APMC Mandi
+              💰 {language === 'mr' ? 'बाजारभाव तपासा' : 'Check APMC Mandi'}
             </button>
           )}
           {(text.includes('Weather') || text.includes('हवामान') || text.includes('मौसम')) && (
             <button
               onClick={() => { setIsOpen(false); navigate('/dashboard/weather'); }}
-              className="btn btn-sm btn-outline"
-              style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px' }}
+              className="chat-shortcut-chip weather"
             >
-              🌤️ View Weather Page
+              🌤️ {language === 'mr' ? 'हवामान अंदाज' : 'Live Weather Radar'}
             </button>
           )}
           <a
             href="tel:18001801551"
-            className="btn btn-sm btn-outline"
-            style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '12px', textDecoration: 'none', color: '#166534' }}
+            className="chat-shortcut-chip helpline"
             title="Toll-Free Kisan Call Center"
           >
-            📞 Kisan Helpline (1800-180-1551)
+            📞 {language === 'mr' ? 'किसान कॉल सेंटर (१८००-१८०-१५५१)' : 'Kisan Helpline (1800-180-1551)'}
           </a>
         </div>
       </div>
@@ -351,39 +343,52 @@ export default function Chatbot() {
 
   return (
     <div className="chatbot-wrapper">
+      {/* FLOATING PROMPT CALLOUT PILL (Visible when chat is closed) */}
+      {!isOpen && showCallout && (
+        <div
+          className="chatbot-pill-callout"
+          onClick={() => { setIsOpen(true); setShowCallout(false); setHasUnread(false); }}
+        >
+          <span className="chatbot-pill-dot" />
+          <span className="chatbot-pill-text">
+            {language === 'mr' ? '🌿 कृषी AI • विचारा काहीही!' : language === 'hi' ? '🌾 कृषि AI • पूछें कुछ भी!' : '✨ Krishi AI • Ask Anything!'}
+          </span>
+          <span style={{ fontSize: '0.85rem' }}>💬</span>
+        </div>
+      )}
+
       {/* CHATBOT WINDOW */}
       {isOpen && (
-        <div className="chatbot-window" style={{ width: '430px', height: '590px' }}>
+        <div className={`chatbot-window ${isExpanded ? 'expanded' : ''}`}>
           {/* HEADER */}
-          <div className="chatbot-header" style={{ padding: '0.8rem 1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <div style={{ position: 'relative' }}>
-                <span style={{ fontSize: '1.4rem' }}>🌾</span>
-                <span
-                  style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    right: 0,
-                    width: '8px',
-                    height: '8px',
-                    backgroundColor: '#10b981',
-                    borderRadius: '50%',
-                    border: '1.5px solid #ffffff'
-                  }}
-                />
+          <div className="chatbot-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className="chatbot-avatar-container">
+                <span>🌱</span>
+                <span className="chatbot-status-indicator" />
               </div>
 
               <div>
-                <div style={{ fontWeight: 800, fontSize: '0.95rem', lineHeight: 1.1 }}>
-                  {t('chatTitle')}
+                <div style={{ fontWeight: 800, fontSize: '0.96rem', letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span>{t('chatTitle')}</span>
+                  <span style={{
+                    background: 'rgba(255, 255, 255, 0.22)',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    padding: '1px 6px',
+                    borderRadius: '6px',
+                    color: '#bbf7d0'
+                  }}>
+                    GenAI 2.0
+                  </span>
                 </div>
-                <div style={{ fontSize: '0.72rem', color: '#bbf7d0', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <span>Agronomic Intelligence</span> &bull; <span>Live</span>
+                <div style={{ fontSize: '0.73rem', color: '#bbf7d0', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '1px' }}>
+                  <span>Multilingual Agronomic Friend</span> &bull; <span style={{ color: '#86efac' }}>Live</span>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               {/* Topology Dropdown Selector */}
               <select
                 value={curTopo.id || 'sangamner'}
@@ -392,24 +397,35 @@ export default function Chatbot() {
                   if (target) setSelectedTopology(target);
                 }}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  background: 'rgba(255, 255, 255, 0.18)',
+                  border: '1px solid rgba(255, 255, 255, 0.28)',
                   color: '#ffffff',
                   fontSize: '0.72rem',
-                  borderRadius: '12px',
-                  padding: '0.2rem 0.4rem',
+                  fontWeight: 600,
+                  borderRadius: '10px',
+                  padding: '0.3rem 0.5rem',
                   outline: 'none',
                   cursor: 'pointer'
                 }}
                 title="Select Active Farm Topology"
               >
                 {safePresets.map(p => (
-                  <option key={p.id} value={p.id} style={{ color: '#000' }}>
+                  <option key={p.id} value={p.id} style={{ color: '#0f172a' }}>
                     📍 {(p.id || '').toUpperCase()}
                   </option>
                 ))}
               </select>
 
+              {/* Expand / Minimize Toggle */}
+              <button
+                className="chatbot-header-btn"
+                onClick={() => setIsExpanded(!isExpanded)}
+                title={isExpanded ? "Collapse View" : "Expand Window"}
+              >
+                {isExpanded ? '⤓' : '⤢'}
+              </button>
+
+              {/* Clear Chat */}
               <button
                 className="chatbot-header-btn"
                 onClick={() => setMessages([])}
@@ -418,6 +434,7 @@ export default function Chatbot() {
                 🗑️
               </button>
 
+              {/* Close Button */}
               <button
                 className="chatbot-header-btn"
                 onClick={() => setIsOpen(false)}
@@ -428,65 +445,127 @@ export default function Chatbot() {
             </div>
           </div>
 
-          {/* ACTIVE TOPOLOGY STATUS STRIP */}
-          <div style={{
-            background: '#f0fdf4',
-            borderBottom: '1px solid #dcfce7',
-            padding: '0.35rem 0.75rem',
-            fontSize: '0.72rem',
-            color: 'var(--primary-900)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div>
-              <strong>📍 {(curTopo.name || 'Sangamner').split('(')[0]}</strong> &bull; {(curTopo.soilType || 'Vertisol').split('(')[0]}
+          {/* ACTIVE TOPOLOGY CONTEXT STRIP */}
+          <div className="chatbot-context-strip">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ color: '#16a34a' }}>●</span>
+              <span><strong>📍 {(curTopo.name || 'Sangamner').split('(')[0]}</strong></span>
+              <span>&bull;</span>
+              <span style={{ color: '#4b5563' }}>{(curTopo.soilType || 'Vertisol').split('(')[0]}</span>
             </div>
-            <span style={{ fontSize: '0.68rem', color: 'var(--primary-700)', fontWeight: 700 }}>
-              {(curTopo.apmcHub || 'Sangamner APMC').split(' ')[0]} APMC
+            <span style={{ background: '#dcfce7', color: '#15803d', padding: '1px 8px', borderRadius: '12px', fontSize: '0.68rem', fontWeight: 700, flexShrink: 0 }}>
+              {(curTopo.apmcHub || 'Sangamner APMC').split(' ')[0]} Mandi
             </span>
           </div>
 
           {/* MESSAGES LIST */}
           <div className="chatbot-messages">
+            {messages.length === 0 && (
+              <div style={{
+                textAlign: 'center',
+                padding: '2.5rem 1rem',
+                color: '#64748b',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.75rem'
+              }}>
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  background: '#dcfce7',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.8rem',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+                }}>
+                  🌱
+                </div>
+                <div style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>
+                  {language === 'mr' ? 'कृषी AI कडे शेतीचे काहीही विचारा' : 'Ask Krishi AI Anything about Farming'}
+                </div>
+                <p style={{ fontSize: '0.82rem', maxWidth: '300px', lineHeight: 1.4 }}>
+                  {language === 'mr'
+                    ? 'औषध खरेदी लिंक्स, बाजारभाव, फवारणी यंत्रे किंवा खतांचे प्रमाण जाणून घ्या.'
+                    : 'Get pesticide purchasing links, APMC mandi rates, drone sprayers, and fertilizer calculators.'}
+                </p>
+
+                <div className="chatbot-suggestions-tray" style={{ justifyContent: 'center', marginTop: '0.5rem' }}>
+                  <button className="chatbot-suggestion-pill" onClick={() => handleSend("🛒 कांदा औषध खरेदी लिंक्स व दुकाने")}>
+                    🧅 औषध खरेदी लिंक्स
+                  </button>
+                  <button className="chatbot-suggestion-pill" onClick={() => handleSend("💰 आजचे बाजारभाव व तेजी-मंदी")}>
+                    💰 आजचे बाजारभाव
+                  </button>
+                  <button className="chatbot-suggestion-pill" onClick={() => handleSend("🚜 आवश्यक शेती यंत्रे व स्प्रेअर")}>
+                    🚜 आधुनिक यंत्रे
+                  </button>
+                  <button className="chatbot-suggestion-pill" onClick={() => handleSend("🌦️ हवामान व फवारणी सल्ला")}>
+                    🌦️ हवामान अंदाज
+                  </button>
+                </div>
+              </div>
+            )}
+
             {messages.map((msg) => (
               <div key={msg.id} className={`chat-message ${msg.sender}`}>
-                <div className="message-bubble">
+                <div className="chat-message-bubble">
                   {msg.sender === 'bot' ? renderMessageContent(msg.text) : msg.text}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: msg.sender === 'user' ? 'flex-end' : 'space-between', alignItems: 'center', marginTop: '2px', padding: '0 4px' }}>
-                  <span className="message-time">{msg.time}</span>
+                <div className="chat-message-meta">
+                  <span style={{ fontSize: '0.68rem', color: msg.sender === 'user' ? 'rgba(255,255,255,0.85)' : '#94a3b8' }}>
+                    {msg.time} {msg.sender === 'user' && '✓'}
+                  </span>
 
                   {msg.sender === 'bot' && (
-                    <button
-                      onClick={() => speakMessage(msg.id, msg.text)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        fontSize: '0.76rem',
-                        cursor: 'pointer',
-                        color: activeSpeechId === msg.id ? '#dc2626' : 'var(--primary-700)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '2px'
-                      }}
-                      title="Listen to response voice"
-                    >
-                      {activeSpeechId === msg.id ? '⏹️ Stop' : '🔊 Listen'}
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {/* Copy button */}
+                      <button
+                        onClick={() => copyMessage(msg.id, msg.text)}
+                        className="chat-action-btn"
+                        title="Copy to clipboard"
+                      >
+                        {copiedId === msg.id ? (
+                          <span style={{ color: '#16a34a', fontWeight: 700 }}>✓ Copied</span>
+                        ) : (
+                          <span>📋 Copy</span>
+                        )}
+                      </button>
+
+                      {/* Text to speech voice button */}
+                      <button
+                        onClick={() => speakMessage(msg.id, msg.text)}
+                        className={`chat-action-btn ${activeSpeechId === msg.id ? 'active-audio' : ''}`}
+                        title="Listen to audio narration"
+                      >
+                        {activeSpeechId === msg.id ? (
+                          <>
+                            <div className="sound-wave">
+                              <span className="sound-wave-bar" />
+                              <span className="sound-wave-bar" />
+                              <span className="sound-wave-bar" />
+                            </div>
+                            <span>Stop</span>
+                          </>
+                        ) : (
+                          <span>🔊 Listen</span>
+                        )}
+                      </button>
+                    </div>
                   )}
                 </div>
 
                 {/* Suggestions Chips */}
                 {msg.suggestions && msg.suggestions.length > 0 && (
-                  <div className="chatbot-suggestions" style={{ marginTop: '0.45rem', display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                  <div className="chatbot-suggestions-tray">
                     {msg.suggestions.map((sug, sIdx) => (
                       <button
                         key={sIdx}
-                        className="suggestion-chip"
+                        className="chatbot-suggestion-pill"
                         onClick={() => handleSend(sug)}
-                        style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem', borderRadius: '12px' }}
                       >
                         {sug}
                       </button>
@@ -498,64 +577,87 @@ export default function Chatbot() {
 
             {loading && (
               <div className="chat-message bot">
-                <div className="message-bubble" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
-                  <span className="loading-spinner" style={{ width: '14px', height: '14px' }} />
-                  <span>Thinking...</span>
+                <div className="chat-typing-bubble">
+                  <span className="chat-typing-dot" />
+                  <span className="chat-typing-dot" />
+                  <span className="chat-typing-dot" />
+                  <span style={{ fontSize: '0.76rem', color: '#64748b', marginLeft: '4px', fontWeight: 600 }}>
+                    {language === 'mr' ? 'कृषी AI विचार करत आहे...' : 'Krishi AI is analyzing...'}
+                  </span>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* INPUT FORM */}
-          <form className="chatbot-input-form" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
-            <button
-              type="button"
-              className={`chatbot-mic-btn ${isListening ? 'listening' : ''}`}
-              onClick={toggleListening}
-              title={isListening ? "Listening..." : "Click to Speak in Marathi / Hindi / English"}
-              style={{
-                backgroundColor: isListening ? '#fee2e2' : 'transparent',
-                color: isListening ? '#dc2626' : 'var(--text-muted)',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '1.1rem',
-                padding: '0 0.5rem'
-              }}
-            >
-              {isListening ? '🔴' : '🎙️'}
-            </button>
+          {/* INPUT DOCK */}
+          <div className="chatbot-input-container">
+            <form className="chatbot-input-form-inner" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
+              {/* Mic Speech Button */}
+              <button
+                type="button"
+                className={`chatbot-mic-action ${isListening ? 'active-listening' : ''}`}
+                onClick={toggleListening}
+                title={isListening ? "Listening... Speak now" : "Click to Speak in Marathi / Hindi / English"}
+              >
+                {isListening ? '🔴' : '🎙️'}
+              </button>
 
-            <input
-              ref={inputRef}
-              type="text"
-              className="chatbot-input"
-              placeholder={language === 'mr' ? 'औषध खरेदी, यंत्रे, खते, बाजारभाव विचारा...' : 'Ask about pest buying links, machinery, prices...'}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={loading}
-            />
+              <input
+                ref={inputRef}
+                type="text"
+                className="chatbot-text-input"
+                placeholder={
+                  language === 'mr'
+                    ? 'औषध खरेदी, यंत्रे, खते, बाजारभाव विचारा...'
+                    : language === 'hi'
+                    ? 'दवा खरीद लिंक, मंडी भाव, मशीनरी पूछें...'
+                    : 'Ask about medicine buy links, mandi rates, machinery...'
+                }
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={loading}
+              />
 
-            <button
-              type="submit"
-              className="btn btn-primary chatbot-send-btn"
-              disabled={loading || !input.trim()}
-              style={{ padding: '0.5rem 0.85rem', borderRadius: 'var(--radius-md)' }}
-            >
-              ➤
-            </button>
-          </form>
+              <button
+                type="submit"
+                className="chatbot-send-action"
+                disabled={loading || !input.trim()}
+                title="Send Message"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
       {/* FLOATING TRIGGER BUTTON */}
       <button
         className="chatbot-trigger"
-        onClick={() => { setIsOpen(!isOpen); setHasUnread(false); }}
-        title="Open Krishi AI Assistant"
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setShowCallout(false);
+          setHasUnread(false);
+        }}
+        title="Open Krishi AI Decision Assistant"
+        aria-label="Open Krishi AI Decision Assistant"
       >
-        <span style={{ fontSize: '1.4rem' }}>💬</span>
-        {hasUnread && <span className="chatbot-badge">1</span>}
+        <span className="chatbot-trigger-ring" />
+        {isOpen ? (
+          <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>✕</span>
+        ) : (
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <circle cx="9" cy="10" r="1" fill="currentColor"></circle>
+            <circle cx="12" cy="10" r="1" fill="currentColor"></circle>
+            <circle cx="15" cy="10" r="1" fill="currentColor"></circle>
+          </svg>
+        )}
+        {hasUnread && !isOpen && <span className="chatbot-trigger-badge">1</span>}
       </button>
     </div>
   );

@@ -23,6 +23,9 @@ const Home = () => {
                 {t('heroTitle1')}<br />
                 <span>{t('heroTitle2')}</span>
               </h1>
+              <div className="hero-tagline" style={{ fontSize: '1.2rem', fontWeight: '800', color: '#065f46', marginBottom: '0.85rem', letterSpacing: '-0.01em' }}>
+                {t('heroTagline')}
+              </div>
               <p className="hero-subtitle">
                 {t('heroSubtitle')}
               </p>
@@ -38,16 +41,40 @@ const Home = () => {
 
             <div className="hero-stats-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: '700', color: 'var(--primary-900)' }}>🌾 {t('monitoringLocality')}</span>
-                <span className="badge badge-success">● {t('activeStream')}</span>
+                <span style={{ fontWeight: '800', color: 'var(--primary-900)', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🌾</span> {t('monitoringLocality')}
+                </span>
+                <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, padding: '4px 10px', borderRadius: '9999px' }}>
+                  <span className="source-dot Live"></span> {t('activeStream')}
+                </span>
               </div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                {activeLocation.name} ({activeLocation.latitude}° N, {activeLocation.longitude}° E)
+              <div style={{ fontSize: '0.84rem', color: '#475569', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '-4px' }}>
+                <span>📍</span> <strong>{activeLocation.name}</strong> ({activeLocation.latitude}° N, {activeLocation.longitude}° E)
               </div>
               
-              <MetricCard title={t('temperature')} value="28.5" unit="°C" icon="🌡️" trend="stable" subtitle="Live Open-Meteo" />
-              <MetricCard title={t('soilMoisture')} value="38.5" unit="%" icon="💧" trend="up" subtitle={activeLocation.soilType || "Field Capacity"} />
-              <MetricCard title={t('cropHealth')} value={language === 'mr' ? 'उत्तम' : language === 'hi' ? 'स्वस्थ' : 'Healthy'} icon="🌾" trend="up" subtitle="NDVI Index 0.72" />
+              <MetricCard
+                title={t('temperature')}
+                value="28.5"
+                unit="°C"
+                icon="🌡️"
+                trend="stable"
+                subtitle="Live Open-Meteo Synoptic API"
+              />
+              <MetricCard
+                title={t('soilMoisture')}
+                value="38.5"
+                unit="%"
+                icon="💧"
+                trend="up"
+                subtitle={activeLocation.soilType || "Vertisol (Medium Deep Black Soil)"}
+              />
+              <MetricCard
+                title={t('cropHealth')}
+                value={language === 'mr' ? 'उत्तम' : language === 'hi' ? 'स्वस्थ' : 'Healthy'}
+                icon="🌾"
+                trend="up"
+                subtitle="Sentinel-2 NDVI Index 0.72 (Canopy Vigor)"
+              />
             </div>
           </div>
         </section>

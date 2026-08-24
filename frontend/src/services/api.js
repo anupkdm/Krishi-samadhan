@@ -1,6 +1,13 @@
 function getBaseUrl() {
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+    let url = import.meta.env.VITE_API_URL.trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://${url}`;
+    }
+    if (!url.endsWith('/api')) {
+      url = `${url.replace(/\/+$/, '')}/api`;
+    }
+    return url;
   }
 
   if (typeof window !== 'undefined' && window.location) {

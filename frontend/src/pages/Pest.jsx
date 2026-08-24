@@ -244,7 +244,35 @@ const Pest = () => {
             </div>
           )}
 
-          {!loading && result && (
+          {!loading && result && (result.isPlantOrCrop === false || result.status === 'invalid_subject') && (
+            <div className="card" style={{ borderTop: '5px solid #ef4444', textAlign: 'center', padding: '3rem 2rem' }}>
+              <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🚫</div>
+              <h3 style={{ color: '#b91c1c', fontWeight: 800, fontSize: '1.3rem', marginBottom: '0.6rem' }}>
+                {language === 'mr' ? 'अवैध फोटो: शेतीचे पीक किंवा पान आढळले नाही' : language === 'hi' ? 'अमान्य फोटो: फसल या पत्ती नहीं मिली' : 'Invalid Subject: No Crop Leaf Detected'}
+              </h3>
+              <p style={{ color: '#4b5563', fontSize: '0.95rem', maxWidth: '480px', margin: '0 auto 1.75rem', lineHeight: 1.6 }}>
+                {result.error || (language === 'mr'
+                  ? 'अपलोड केलेल्या फोटोमध्ये कोणतेही शेती पीक किंवा पान आढळले नाही (मानवी चेहरा / इतर विषय आढळला). कृपया अचूक रोग व कीड निदानासाठी पिकाच्या बाधित पानाचा स्पष्ट फोटो अपलोड करा.'
+                  : 'The AI Vision system analyzed your uploaded photo and detected a human portrait or non-crop subject. Please upload a clear photo of an affected crop leaf, stem, or pest for accurate diagnosis.')}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setImage(null);
+                    setPreview(null);
+                    setResult(null);
+                    document.getElementById('pest-file-input')?.click();
+                  }}
+                  style={{ fontWeight: 700 }}
+                >
+                  📸 {language === 'mr' ? 'पिकाचे पान अपलोड करा' : 'Upload Crop Leaf Photo'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!loading && result && result.isPlantOrCrop !== false && result.status !== 'invalid_subject' && (
             <div className="card" style={{ borderTop: '5px solid var(--primary-600)' }}>
               <div className="card-header" style={{ paddingBottom: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>

@@ -35,7 +35,14 @@ exports.getSchemes = async (search, category) => {
 exports.getSchemeById = async (id) => {
     try {
         const db = await getDb();
-        const result = db.exec("SELECT * FROM government_schemes WHERE id = ?", [id]);
+        let result = [];
+        if (!isNaN(parseInt(id, 10)) && String(parseInt(id, 10)) === String(id).trim()) {
+            result = db.exec("SELECT * FROM government_schemes WHERE id = ?", [parseInt(id, 10)]);
+        }
+        if (result.length === 0) {
+            const cleanQuery = String(id).replace(/[-_]/g, '%');
+            result = db.exec("SELECT * FROM government_schemes WHERE id = ? OR name LIKE ? OR description LIKE ?", [id, `%${cleanQuery}%`, `%${cleanQuery}%`]);
+        }
         if (result.length === 0) return null;
 
         const row = result[0].values[0];

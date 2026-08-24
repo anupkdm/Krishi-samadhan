@@ -78,11 +78,12 @@ const COMPREHENSIVE_ADVISORIES = [
 export const getAdvisories = async (lat = 19.8833, lon = 74.4833) => {
   try {
     const res = await api.get('/advisory', { lat, lon });
-    if (res && (res.records?.length > 0 || (Array.isArray(res) && res.length > 0))) {
+    const list = res?.advisories || res?.records || (Array.isArray(res) ? res : null);
+    if (list && list.length > 0) {
       return {
         status: "success",
-        count: res.records?.length || res.length,
-        records: res.records || res
+        count: list.length,
+        records: list
       };
     }
   } catch (err) {
@@ -94,11 +95,12 @@ export const getAdvisories = async (lat = 19.8833, lon = 74.4833) => {
 export const generateAdvisories = async (lat = 19.8833, lon = 74.4833) => {
   try {
     const res = await api.post('/advisory/generate', { lat, lon });
-    if (res && (res.records?.length > 0 || (Array.isArray(res) && res.length > 0))) {
+    const list = res?.advisories || res?.records || (Array.isArray(res) ? res : null);
+    if (list && list.length > 0) {
       return {
         status: "success",
-        count: res.records?.length || res.length,
-        records: res.records || res
+        count: list.length,
+        records: list
       };
     }
   } catch (err) {

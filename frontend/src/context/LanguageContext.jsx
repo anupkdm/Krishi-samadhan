@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 const LanguageContext = createContext();
 
@@ -9,7 +9,8 @@ export const translations = {
     tagline: "Smarter Decisions. Better Agriculture.",
     heroTitle1: "Smarter Decisions.",
     heroTitle2: "Better Agriculture.",
-    heroSubtitle: "A unified agricultural platform connecting real-time weather, soil diagnostics, satellite NDVI, crop health, APMC mandi rates, and government schemes to empower farmer decisions.",
+    heroTagline: "Better Insights. Better Decisions. Better Farming.",
+    heroSubtitle: "From your soil to the sky, from crop health to market prices—we bring everything you need to make confident decisions and grow with confidence.",
     explorePlatform: "Explore Platform",
     learnMore: "Learn More",
     activeStream: "Active Stream",
@@ -148,7 +149,8 @@ export const translations = {
     tagline: "हुशार निर्णय. समृद्ध शेती.",
     heroTitle1: "अचूक निर्णय.",
     heroTitle2: "समृद्ध शेती.",
-    heroSubtitle: "हवामान, माती, उपग्रह, पीक, बाजारभाव आणि सरकारी योजनांची माहिती एकाच छताखाली देणारे सर्वसमावेशक कृषी निर्णय व्यासपीठ.",
+    heroTagline: "उत्तम माहिती. अचूक निर्णय. समृद्ध शेती.",
+    heroSubtitle: "मातीपासून आकाशापर्यंत, पिकांच्या आरोग्यापासून ते बाजारभावांपर्यंत — आत्मविश्वासाने योग्य निर्णय घेण्यासाठी आणि समृद्धीकडे वाटचाल करण्यासाठी आवश्यक सर्व माहिती एकाच ठिकाणी.",
     explorePlatform: "प्लॅटफॉर्म पहा",
     learnMore: "अधिक माहिती",
     activeStream: "थेट प्रवाह",
@@ -284,10 +286,11 @@ export const translations = {
   hi: {
     // Brand & Global
     brandName: "कृषि समाधान",
-    tagline: "सटीक निर्णय. बेहतर कृषि.",
+    tagline: "सटीक निर्णय. समृद्ध खेती.",
     heroTitle1: "सटीक निर्णय.",
-    heroTitle2: "बेहतर कृषि.",
-    heroSubtitle: "मौसम, मिट्टी, उपग्रह, फसल, मंडी भाव और सरकारी योजनाओं की जानकारी को एक साथ जोड़ने वाला एकीकृत कृषि मंच।",
+    heroTitle2: "समृद्ध खेती.",
+    heroTagline: "बेहतर जानकारी। सटीक निर्णय। बेहतर खेती।",
+    heroSubtitle: "मिट्टी से लेकर आसमान तक, फसल के स्वास्थ्य से लेकर मंडी भाव तक — सही निर्णय लेने और आत्मविश्वास के साथ आगे बढ़ने के लिए जरूरी हर जानकारी एक ही मंच पर।",
     explorePlatform: "मंच देखें",
     learnMore: "और जानें",
     activeStream: "सक्रिय स्ट्रीम",

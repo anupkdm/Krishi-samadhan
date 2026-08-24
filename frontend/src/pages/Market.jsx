@@ -7,11 +7,8 @@ import SourceBadge from '../components/SourceBadge';
 import marketService from '../services/marketService';
 import inputStoreService from '../services/inputStoreService';
 import { useLanguage } from '../context/LanguageContext';
-import { useAuth } from '../context/AuthContext';
-
 const Market = () => {
   const { t, language } = useLanguage();
-  const { activeLocation } = useAuth();
   const [activeTab, setActiveTab] = useState('mandi'); // 'mandi' | 'seeds' | 'pesticides' | 'fertilizers'
 
   // APMC Mandi State

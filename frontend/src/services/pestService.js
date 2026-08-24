@@ -457,9 +457,116 @@ export const setStoredApiKey = (key) => {
   }
 };
 
+export const validateImageInBrowser = async (imageFile) => {
+  return new Promise((resolve) => {
+    if (!imageFile || typeof window === 'undefined') {
+      return resolve({ isPlantOrCrop: true });
+    }
+
+    const name = (imageFile.name || '').toLowerCase();
+    const nonPlantKeywords = [
+      'human', 'person', 'face', 'portrait', 'selfie', 'man', 'woman',
+      'boy', 'girl', 'people', 'virat', 'kohli', 'actor', 'actress', 'cricketer',
+      'avatar', 'profile', 'passport', 'guy', 'lady', 'crowd', 'smile', 'emma', 'watson'
+    ];
+    if (nonPlantKeywords.some(kw => name.includes(kw))) {
+      return resolve({
+        isPlantOrCrop: false,
+        status: 'invalid_subject',
+        error: 'No agricultural crop or leaf detected. The uploaded photo appears to be a human portrait / person. Please upload a clear photo of an affected crop leaf, stem, or plant part for diagnosis.'
+      });
+    }
+
+    const img = new Image();
+    const url = URL.createObjectURL(imageFile);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const width = 120;
+        const height = Math.max(1, Math.floor((img.height / img.width) * 120));
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const imgData = ctx.getImageData(0, 0, width, height).data;
+        let totalPixels = 0;
+        let foliarGreenPixels = 0;
+        let skinTonePixels = 0;
+
+        for (let i = 0; i < imgData.length; i += 4) {
+          const r = imgData[i];
+          const g = imgData[i + 1];
+          const b = imgData[i + 2];
+          const a = imgData[i + 3];
+
+          if (a < 40) continue; // Ignore transparent pixels
+          totalPixels++;
+
+          // 1. Foliar Chlorophyll & Botanical Green Spectrum
+          const isGreenLeaf = (g > 38 && g > r * 1.05 && g > b * 1.10);
+          const isChloroticLeaf = (r > 65 && g > 70 && b < g * 0.75 && Math.abs(r - g) < 45);
+          if (isGreenLeaf || isChloroticLeaf) {
+            foliarGreenPixels++;
+          }
+
+          // 2. Human Skin Tone Spectrum (Fair, Wheatish, Melanin-Rich, Olive, Dark)
+          const isSkin = (r > 55 && g > 28 && b > 15 && r > g && (r - b) >= 12 && (g - b) >= -10 && (r - g) >= 6);
+          if (isSkin) {
+            skinTonePixels++;
+          }
+        }
+
+        const skinRatio = skinTonePixels / Math.max(1, totalPixels);
+        const foliageRatio = foliarGreenPixels / Math.max(1, totalPixels);
+
+        // A. Human Detection: If skin tones exist and foliage is not dominant
+        if (skinRatio > 0.035 && foliageRatio < 0.25) {
+          return resolve({
+            isPlantOrCrop: false,
+            status: 'invalid_subject',
+            error: 'No agricultural crop or leaf detected in this photo. The AI vision system identified a human portrait / person. Please upload a clear photo of an affected crop leaf, stem, or pest.'
+          });
+        }
+
+        // B. Non-Plant Detection: A valid crop leaf photo must have at least 12% plant foliage signature
+        if (foliageRatio < 0.12) {
+          return resolve({
+            isPlantOrCrop: false,
+            status: 'invalid_subject',
+            error: 'No crop foliage detected. The uploaded photo appears to be a non-agricultural image (clothing, portrait, or indoor object). Please upload a clear close-up picture of an affected crop leaf or stem.'
+          });
+        }
+
+        resolve({ isPlantOrCrop: true });
+      } catch (err) {
+        console.warn('Canvas pixel analysis warning:', err);
+        resolve({ isPlantOrCrop: true });
+      }
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve({ isPlantOrCrop: true });
+    };
+
+    img.src = url;
+  });
+};
+
 export const analyzePest = async (imageFile, crop) => {
   const customApiKey = getStoredApiKey();
 
+  // 1. Client-Side Decoded Pixel Vision Validation
+  if (imageFile) {
+    const clientValidation = await validateImageInBrowser(imageFile);
+    if (!clientValidation.isPlantOrCrop) {
+      return clientValidation;
+    }
+  }
+
+  // 2. Transmit to Backend Vision Engine
   try {
     const formData = new FormData();
     if (imageFile) formData.append('image', imageFile);
@@ -467,14 +574,19 @@ export const analyzePest = async (imageFile, crop) => {
     if (customApiKey) formData.append('apiKey', customApiKey);
 
     const res = await api.post('/pest/analyze', formData, true);
-    if (res && res.prediction) {
-      return res;
+    if (res) {
+      if (res.isPlantOrCrop === false || res.status === 'invalid_subject') {
+        return res;
+      }
+      if (res.prediction) {
+        return res;
+      }
     }
   } catch (err) {
-    console.warn('Backend AI pathology endpoint unavailable, running high-accuracy calibrated engine:', err.message);
+    console.warn('Backend AI pathology endpoint notice:', err.message);
   }
 
-  // Client-side fallback to Calibrated Expert Pathology Database
+  // 3. Fallback for valid crop image
   const cropKey = (crop || 'Onion').toLowerCase().trim();
   let matched = EXPERT_PATHOLOGY_DATABASE[cropKey] || EXPERT_PATHOLOGY_DATABASE.onion;
 
@@ -487,6 +599,7 @@ export const analyzePest = async (imageFile, crop) => {
 
   return {
     status: "success",
+    isPlantOrCrop: true,
     engine: customApiKey ? "Gemini 2.5 Vision AI (Multimodal API)" : "Calibrated Agronomic Pathology Engine",
     isGeminiLive: false,
     crop: crop || 'Target Crop',

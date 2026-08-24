@@ -165,11 +165,12 @@ export const getSchemes = async (searchOrParams, categoryParam) => {
     if (category && category !== 'All') params.category = category;
 
     const res = await api.get('/schemes', params);
-    if (res && (res.records?.length > 0 || (Array.isArray(res) && res.length > 0))) {
+    const list = res?.schemes || res?.records || (Array.isArray(res) ? res : null);
+    if (list && list.length > 0) {
       return {
         status: "success",
-        count: res.records?.length || res.length,
-        records: res.records || res
+        count: list.length,
+        records: list
       };
     }
   } catch (err) {

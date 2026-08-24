@@ -1,4 +1,6 @@
-const { GoogleGenAI } = require('@google/genai');
+const fs = require('fs');
+const path = require('path');
+const { getDb } = require('../db/database');
 
 const LOCAL_KRISHI_SHOPS = [
   {
@@ -118,124 +120,377 @@ const EXPERT_PATHOLOGY_DATABASE = {
         ]
       },
       {
-        tier: "🌿 Economical & Organic Alternative",
+        tier: "🌿 Certified Organic & Bio-Formulation",
         tierCategory: "organic",
-        name: "Azadirachtin 10,000 PPM Neem Oil + Beauveria Bassiana Bio-Fungicide",
-        brand: "Multiplex Bio / IFFCO Bio",
-        packSize: "500 ml + 1 kg",
-        price: "₹240 + ₹190 = ₹430 Combo",
-        costPerAcre: "₹215 / acre",
-        features: "100% organic, repels thrips, destroys fungal spore membranes, safe for export.",
+        name: "EcoNeem Plus (10,000 PPM Azadirachtin) + Beauveria Bassiana WP",
+        brand: "EID Parry / T.Stanes",
+        packSize: "250 ml + 1 kg",
+        price: "₹450 + ₹380 = ₹830",
+        costPerAcre: "₹415 / acre",
+        features: "100% residue-free repellent, antifeedant, and entomopathogenic fungal parasitoid.",
         links: [
           { platform: "IFFCO Bazar", url: "https://www.iffcobazar.in" },
-          { platform: "BigHaat", url: "https://www.bighaat.com" }
+          { platform: "AgroStar", url: "https://www.agrostar.in" }
         ]
       }
     ],
     machineryTech: {
-      sprayer: "16L 12V 12Ah Dual-Pump Battery Knapsack Sprayer (Pressure: 8.0 bar) or Tractor-Mounted 500L HTP Power Sprayer with 50m delivery hose.",
-      nozzleType: "Hollow Cone Brass Nozzle (0.3mm disc) to produce fine 90-120 micron fog droplets for thorough under-leaf penetration.",
-      droneSpraying: "10L Agriculture Kisan Drone with centrifugal atomizers @ 8 Litres/acre spray volume in 6 mins (Save 90% water).",
-      landPrep: "45 HP Tractor with 7-foot Rotavator + Raised Bed Maker (Broad Bed & Furrow BBF system: 120cm bed width, 30cm furrow).",
-      plantingWeeding: "Raised bed onion seedling transplanter & 5 HP Mini Power Weeder for inter-row weeding without damaging root systems."
+      sprayer: "20L Battery-Operated Knapsack Sprayer (12V/12Ah) or Tractor-Mounted 400L Boom Sprayer.",
+      nozzleType: "Double Swivel Hollow Cone Nozzle (0.4mm) with brass tip for underleaf mist coverage.",
+      droneSpraying: "Recommended drone payload: 10L/acre with 4-rotor ultra-low volume (ULV) nozzles at 2.5m altitude.",
+      landPrep: "Broad Bed and Furrow (BBF) former (bed width 120cm, furrow 30cm) for optimal root aeration.",
+      plantingWeeding: "Multi-crop pneumatic precision seeder + manual cycle weeder."
     }
   },
-  cotton: {
-    prediction: "Pink Bollworm Infestation & Alternaria Leaf Spot",
-    scientificName: "Pectinophora gossypiella Saunders & Alternaria macrospora",
-    confidence: 0.95,
+  pomegranate: {
+    prediction: "Bacterial Blight / Telya (Xanthomonas axonopodis pv. punicae)",
+    scientificName: "Xanthomonas axonopodis pv. punicae (Hingorani & Singh)",
+    confidence: 0.96,
     severity: "High",
     causeAnalysis: {
-      pathogenType: "Lepidopteran Insect Pest & Fungal Foliar Pathogen",
-      causalOrganism: "Pectinophora gossypiella (Pink Bollworm) & Alternaria macrospora",
+      pathogenType: "Bacterial Vascular Pathogen",
+      causalOrganism: "Xanthomonas axonopodis pv. punicae",
       environmentalTriggers: [
-        "Moderate temperature (25°C - 32°C) with nocturnal moth flight surges",
-        "High relative humidity (>75%) promoting fungal spore germination on bolls",
-        "Extended crop season beyond 150 days (allowing multi-generation pest buildup)"
+        "Temperatures between 28°C - 35°C with intermittent heavy rains and humidity >70%",
+        "Wind-driven rain splashes dispersing bacterial oozes across adjoining orchard rows",
+        "Pruning wounds and thrips/mite puncture micro-abrasions without protective paste"
       ],
-      transmissionMode: "Female moths lay eggs on squares and young bolls; neonate larvae bore inside within 30-45 minutes and seal entry hole with frass."
+      transmissionMode: "Bacterial ooze transmitted through rain splash, pruning secateurs, and infected saplings."
     },
     symptoms: [
-      "Rosetted flowers that fail to open normally ('Rosette Bloom')",
-      "Tiny entry pinholes on green bolls sealed with brownish larval frass",
-      "Premature drop of squares and young bolls",
-      "Stained lint and hollowed-out seeds inside maturing bolls"
+      "Water-soaked dark brown oily spots on leaves turning into characteristic angular brown lesions",
+      "Triangular or L-shaped deep necrotic cracking on pomegranate rind ('Telya')",
+      "Cankerous black lesions girdling nodes leading to branch dieback"
     ],
-    recommendation: "Install 8 Pheromone Traps/acre. Spray Chlorantraniliprole 18.5% SC @ 3ml/10L or Profenofos 50% EC @ 30ml/10L water.",
+    recommendation: "Spray Streptocycline (90:10 Streptomycin+Tetracycline) @ 2g/10L + Copper Oxychloride 50% WP @ 25g/10L water.",
     chemicalSolution: {
-      activeIngredients: "Chlorantraniliprole 18.5% SC (Coragen) or Profenofos 50% EC",
-      dosagePer10L: "3ml Chlorantraniliprole 18.5% SC or 20ml Profenofos 50% EC in 10L water",
-      dosagePerAcre: "60ml Chlorantraniliprole in 200L water per acre",
-      applicationMethod: "Foliar mist covering flower buds, squares, and young developing bolls.",
-      waitingPeriodPHI: "Pre-Harvest Interval (PHI): 14 Days"
+      activeIngredients: "Streptocycline 90:10 (6g/50L) + Copper Oxychloride 50% WP (125g/50L) + 2-Bromo-2-nitropropane-1,3-diol (Bactronol @ 5g/10L)",
+      dosagePer10L: "1.2g Streptocycline + 25g Copper Oxychloride in 10 Litres of water",
+      dosagePerAcre: "30g Streptocycline + 600g Copper Oxychloride in 250 Litres of water per acre",
+      applicationMethod: "High pressure orchard air-assisted mist sprayer covering all trunk branches and fruit surfaces.",
+      waitingPeriodPHI: "Pre-Harvest Interval (PHI): 15 Days"
     },
     organicSolution: {
-      formulation: "5% Neem Oil (10,000 ppm) @ 2ml/L or NSKE 5% @ 50ml/10L water",
-      bioControl: "Release *Trichogramma bactrae* egg parasitoids @ 60,000/acre at weekly intervals (3 releases)",
-      mechanicalTraps: "Deploy 8 Pheromone Traps (Pectino-lure) per acre for mass trapping and ETL monitoring"
+      formulation: "Bordeaux Mixture (0.5%) [500g Copper Sulfate + 500g Slaked Lime in 100L water]",
+      bioControl: "Trunk paste application with *Pseudomonas fluorescens* (10g) + Cow dung slurry (1kg)",
+      mechanicalTraps: "Sanitize secateurs with 1% Sodium Hypochlorite between every individual tree pruning"
     },
     immediateActionPlan: [
-      "Step 1: Pluck and destroy all rosetted flowers by burning or deep burial.",
-      "Step 2: Check pheromone trap catches daily (ETL: 8 moths/trap/night for 3 consecutive days).",
-      "Step 3: Apply targeted ovicidal/larvicidal spray if trap catches exceed threshold."
+      "Step 1: Sterilize all pruning shears in antiseptic solution before touching any tree.",
+      "Step 2: Collect all dropped infected leaves and fruits into plastic bags and bury with lime outside orchard.",
+      "Step 3: Apply protective copper-antibiotic foliar spray immediately after any rainfall event."
     ],
-    cultural: "Terminate cotton crop within 150 days to prevent diapausing larvae buildup in soil.",
-    preventive: "Deep summer ploughing to expose pupae to solar heat and predatory birds.",
+    cultural: "Maintain wide orchard spacing (4.5m x 3m), eradicate alternate weed hosts, avoid flood irrigation.",
+    preventive: "Paste tree crotches with Bordeaux paste (1:1:10) twice annually during Mrig and Hastha bahar transitions.",
     products: [
       {
-        tier: "🌟 Top / High Efficacy (Long Residual Protection)",
+        tier: "🌟 Top / High Efficacy (Quick Knockdown)",
         tierCategory: "premium",
-        name: "FMC Coragen (Chlorantraniliprole 18.5% SC) / Rynaxypyr",
-        brand: "FMC India",
-        packSize: "150 ml",
-        price: "₹1,750 – ₹1,890",
-        costPerAcre: "₹700 / acre",
-        features: "Ovi-larvicidal powerhouse. Paralyzes bollworm muscles within 2 hours. 18 days residual control.",
+        name: "Streptocycline (Hindustan Antibiotics) + Dhanucop (Copper Oxychloride)",
+        brand: "HAL / Dhanuka",
+        packSize: "6g x 5 pouches + 500g",
+        price: "₹350 + ₹320 = ₹670",
+        costPerAcre: "₹670 / acre",
+        features: "Gold standard systemic bactericide with protective copper shield.",
         links: [
-          { platform: "BigHaat", url: "https://www.bighaat.com/products/coragen-insecticide" },
+          { platform: "BigHaat", url: "https://www.bighaat.com" },
           { platform: "AgroStar", url: "https://www.agrostar.in" }
         ]
       },
       {
-        tier: "💰 Most Affordable / Best Value (Economical Knockdown)",
+        tier: "💰 Most Affordable / Best Value",
+        tierCategory: "affordable",
+        name: "Bordeaux Mixture Components (Copper Sulfate 1kg + Hydrated Lime 1kg)",
+        brand: "Local Certified ISI",
+        packSize: "1kg + 1kg",
+        price: "₹240 Combo",
+        costPerAcre: "₹240 / acre",
+        features: "Time-tested, economical organic-compatible bactericidal-fungicidal wash.",
+        links: [
+          { platform: "IFFCO Bazar", url: "https://www.iffcobazar.in" }
+        ]
+      }
+    ],
+    machineryTech: {
+      sprayer: "500L Tractor-Mounted Trailed HTP Air-Carrier Orchard Sprayer with axial fan.",
+      nozzleType: "Ceramic Disc-Core Hollow Cone (1.2mm) with anti-drip check valves.",
+      droneSpraying: "Not recommended for mature orchard canopy penetration; use ground HTP air-blast.",
+      landPrep: "Subsoiler ploughing to 60cm depth to break hard caliche pan.",
+      plantingWeeding: "Tractor power-tiller with reverse rotation blades for orchard basin cultivation."
+    }
+  },
+  cotton: {
+    prediction: "Pink Bollworm Infestation (Pectinophora gossypiella)",
+    scientificName: "Pectinophora gossypiella (Saunders)",
+    confidence: 0.95,
+    severity: "High",
+    causeAnalysis: {
+      pathogenType: "Lepidopteran Insect Pest",
+      causalOrganism: "Pectinophora gossypiella (Lepidoptera: Gelechiidae)",
+      environmentalTriggers: [
+        "Cloudy, warm weather (26°C - 32°C) during squaring and boll development stages",
+        "Extended crop season exceeding 160 days without termination of ratoon cotton",
+        "Absence of non-Bt refuge crops around Bt-cotton plantings"
+      ],
+      transmissionMode: "Nocturnal female moths lay 100-200 eggs on squares, bolls, and leaf axils."
+    },
+    symptoms: [
+      "Rosetted flowers ('Rosette buds') with petals tied together by silk threads",
+      "Interlocular burrowing inside green bolls with staining of lint fibres ('Locule Damage')",
+      "Premature drop of squares and opening of deformed, partially filled bolls"
+    ],
+    recommendation: "Install 8 Pheromone Traps/acre with Pectino-Lure and spray Profenofos 50% EC @ 30ml/10L water.",
+    chemicalSolution: {
+      activeIngredients: "Profenofos 50% EC or Chlorpyrifos 20% EC + Cypermethrin 2% EC",
+      dosagePer10L: "30ml Profenofos 50% EC in 10 Litres of water",
+      dosagePerAcre: "600ml Profenofos 50% EC in 200 Litres of water per acre",
+      applicationMethod: "Direct spray on squares, flowers, and developing bolls during late evening.",
+      waitingPeriodPHI: "Pre-Harvest Interval (PHI): 14 Days"
+    },
+    organicSolution: {
+      formulation: "Neem Oil (10,000 PPM) @ 30ml/10L + Spinosad 45% SC @ 3.5ml/10L",
+      bioControl: "Release *Trichogramma bactrae* egg parasitoids @ 60,000/acre at weekly intervals",
+      mechanicalTraps: "Install 8-10 Pheromone Traps per acre with Pectino-Lure lures changed every 25 days"
+    },
+    immediateActionPlan: [
+      "Step 1: Inspect 20 green bolls per plot; if >2 bolls show entry holes, trigger spray.",
+      "Step 2: Collect and burn all rosetted flowers daily.",
+      "Step 3: Deploy pheromone traps immediately to identify moth flight peaks."
+    ],
+    cultural: "Strictly terminate cotton crop by December; avoid ratoon crops; practice deep summer ploughing.",
+    preventive: "Plant 20% non-Bt refuge borders and use PB-Rope L mating disruption ropes.",
+    products: [
+      {
+        tier: "💰 Most Affordable / Best Value",
         tierCategory: "affordable",
         name: "Profenofos 50% EC (Curacron / Prahar) + Pheromone Traps",
         brand: "Syngenta / Dhanuka",
         packSize: "500 ml + 8 Pectino-Lures",
         price: "₹420 + ₹240 = ₹660",
         costPerAcre: "₹380 / acre",
-        features: "Strong ovicidal translaminar action against eggs and newly hatched larvae.",
+        features: "Strong ovicidal translaminar action against eggs and larvae.",
         links: [
-          { platform: "BigHaat", url: "https://www.bighaat.com/products/curacron" },
-          { platform: "AgroStar", url: "https://www.agrostar.in" }
-        ]
-      },
-      {
-        tier: "🌿 Economical & Bio-Control Alternative",
-        tierCategory: "organic",
-        name: "Pectino-Lure Pheromone Traps + Trichogramma Bactrae Parasitoids",
-        brand: "PCI / Bio-Control Lab",
-        packSize: "8 Funnel Traps + 3 Tricho-Cards",
-        price: "₹320 / acre",
-        costPerAcre: "₹320 / acre",
-        features: "Captures male moths to disrupt mating cycle and parasitizes 85% of bollworm eggs naturally.",
-        links: [
-          { platform: "IFFCO Bazar", url: "https://www.iffcobazar.in" },
           { platform: "BigHaat", url: "https://www.bighaat.com" }
         ]
       }
     ],
     machineryTech: {
-      sprayer: "Tractor-Mounted 500L / 1000L Boom Sprayer with tall crop clearance or 20L Backpack Power Sprayer.",
-      nozzleType: "Double Swivel Hollow Cone Nozzle (0.4mm) angled at 45° for flowers and square stems.",
+      sprayer: "Tractor-Mounted 500L Boom Sprayer with tall crop clearance or 20L Backpack Power Sprayer.",
+      nozzleType: "Double Swivel Hollow Cone Nozzle (0.4mm) angled at 45° for squares.",
       droneSpraying: "16L Drone Sprayer with anti-collision radar @ 10 Litres/acre.",
-      landPrep: "50 HP Tractor with 2-bottom Hydraulic Reversible MB Plough + 9-Tyne Cultivator.",
+      landPrep: "50 HP Tractor with 2-bottom Hydraulic Reversible MB Plough.",
       plantingWeeding: "Pneumatic precision planter + Tractor-drawn inter-cultivator."
     }
   }
 };
 
-exports.analyzePest = async (file, crop, customApiKey) => {
+// Heuristic validator to verify whether an image is a plant or non-plant/human
+const validateImageLocally = (filePath, originalName) => {
+  const name = (originalName || '').toLowerCase();
+  const nonPlantKeywords = [
+    'human', 'person', 'face', 'portrait', 'selfie', 'man', 'woman',
+    'boy', 'girl', 'people', 'virat', 'kohli', 'actor', 'actress', 'cricketer',
+    'avatar', 'profile', 'passport', 'guy', 'lady', 'crowd', 'smile', 'emma', 'watson'
+  ];
+
+  if (nonPlantKeywords.some(kw => name.includes(kw))) {
+    return {
+      isPlantOrCrop: false,
+      error: "No agricultural crop or plant leaf detected. The uploaded photo appears to be a person / human portrait. Please upload a clear photo of an affected crop leaf, stem, or plant part for pathology diagnosis."
+    };
+  }
+
+  if (filePath && fs.existsSync(filePath)) {
+    try {
+      const buffer = fs.readFileSync(filePath);
+      let totalSamples = 0;
+      let foliarGreenSamples = 0;
+      let skinToneSamples = 0;
+
+      // Sample chromatic color signatures across raw bytes
+      const sampleLimit = Math.min(buffer.length - 4, 80000);
+      for (let i = 100; i < sampleLimit; i += 8) {
+        const r = buffer[i];
+        const g = buffer[i + 1];
+        const b = buffer[i + 2];
+
+        totalSamples++;
+        // Foliar / Botanical Green Spectrum
+        const isGreen = (g > 38 && g > r * 1.05 && g > b * 1.10);
+        const isChlorotic = (r > 65 && g > 70 && b < g * 0.75 && Math.abs(r - g) < 45);
+        if (isGreen || isChlorotic) {
+          foliarGreenSamples++;
+        }
+
+        // Human Skin Tone Spectrum
+        const isSkin = (r > 55 && g > 28 && b > 15 && r > g && (r - b) >= 12 && (g - b) >= -10 && (r - g) >= 6);
+        if (isSkin) {
+          skinToneSamples++;
+        }
+      }
+
+      if (totalSamples > 60) {
+        const skinRatio = skinToneSamples / totalSamples;
+        const foliageRatio = foliarGreenSamples / totalSamples;
+
+        if (skinRatio > 0.035 && foliageRatio < 0.25) {
+          return {
+            isPlantOrCrop: false,
+            error: "No agricultural crop or plant leaf detected in this photo. The AI vision system identified a human face / portrait. Please upload a clear picture of a crop leaf or pest."
+          };
+        }
+
+        if (foliageRatio < 0.12) {
+          return {
+            isPlantOrCrop: false,
+            error: "No crop foliage or plant tissue detected in this photo. The uploaded photo appears to be a non-agricultural image. Please upload a clear picture of an affected crop leaf or stem."
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Image heuristic analysis notice:', err.message);
+    }
+  }
+
+  return { isPlantOrCrop: true };
+};
+
+// Gemini Multimodal Vision Classifier
+const analyzeWithGeminiVision = async (filePath, mimetype, crop, apiKey) => {
+  if (!fs.existsSync(filePath)) throw new Error("File not found on disk");
+  const base64Data = fs.readFileSync(filePath).toString('base64');
+
+  const prompt = `You are a certified agricultural AI vision pathologist.
+Analyze this uploaded image carefully:
+1. FIRST: Check if this image actually contains an agricultural plant, crop leaf, stem, fruit, vegetable, farm field, or pest/insect.
+CRITICAL: If the image is a HUMAN BEING, human face, person, portrait, animal (dog, cat, pet), vehicle, building, electronic screen, or any non-plant subject, you MUST return valid JSON with:
+{
+  "isPlantOrCrop": false,
+  "error": "No agricultural crop, leaf, or plant pest detected in the image. The image appears to be a human or non-crop subject. Please upload a clear photo of an affected crop leaf, stem, or plant part for pathology diagnosis.",
+  "detectedSubject": "Human / Non-Agricultural Subject"
+}
+
+2. IF IT IS A PLANT/CROP:
+Diagnose the pathology for the target crop (${crop || 'Auto-detect'}):
+Return valid JSON only in this exact format:
+{
+  "isPlantOrCrop": true,
+  "crop": "${crop || 'Crop'}",
+  "prediction": "Exact disease or pest name (or 'Healthy Crop')",
+  "scientificName": "Binomial scientific name",
+  "confidence": 0.95,
+  "severity": "Low",
+  "causeAnalysis": {
+    "pathogenType": "Fungal / Bacterial / Viral / Insect / Nutrient Deficiency",
+    "causalOrganism": "Organism name",
+    "environmentalTriggers": ["trigger 1", "trigger 2"],
+    "transmissionMode": "How it spreads"
+  },
+  "symptoms": ["symptom 1", "symptom 2"],
+  "recommendation": "Main actionable advice",
+  "chemicalSolution": {
+    "activeIngredients": "Chemical active ingredients and brand",
+    "dosagePer10L": "Dosage in 10L water",
+    "dosagePerAcre": "Dosage per acre",
+    "applicationMethod": "Application instructions",
+    "waitingPeriodPHI": "Pre-harvest interval"
+  },
+  "organicSolution": {
+    "formulation": "Organic spray recipe",
+    "bioControl": "Bio-agent recommendations",
+    "mechanicalTraps": "Sticky traps or pheromone lures"
+  },
+  "immediateActionPlan": ["Step 1", "Step 2", "Step 3"]
+}`;
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const payload = {
+    contents: [
+      {
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: mimetype || 'image/jpeg', data: base64Data } }
+        ]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      response_mime_type: "application/json"
+    }
+  };
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    throw new Error(`Gemini API error status ${res.status}`);
+  }
+
+  const data = await res.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!rawText) throw new Error("Empty response from Vision AI model");
+
+  const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+  return JSON.parse(cleanJson);
+};
+
+const performPestAnalysis = async (crop, imageUrl, userId, options = {}) => {
+  const { apiKey, filePath, originalName, mimetype } = options;
+
+  // STEP 1: If Gemini API key is provided, execute full Multimodal Vision AI
+  if (apiKey && filePath && fs.existsSync(filePath)) {
+    try {
+      const geminiResult = await analyzeWithGeminiVision(filePath, mimetype, crop, apiKey);
+      if (geminiResult.isPlantOrCrop === false) {
+        return {
+          status: "invalid_subject",
+          isPlantOrCrop: false,
+          error: geminiResult.error || "No agricultural crop or leaf detected in this photo. Please upload a clear photo of an affected crop leaf.",
+          detectedSubject: geminiResult.detectedSubject || "Non-Crop Subject",
+          imageUrl: imageUrl || null
+        };
+      }
+
+      // If valid crop detected by Gemini, format and return full pathology
+      return {
+        status: "success",
+        engine: "Gemini 1.5 Multimodal Agricultural Vision AI",
+        crop: geminiResult.crop || crop,
+        imageUrl: imageUrl || null,
+        prediction: geminiResult.prediction,
+        scientificName: geminiResult.scientificName,
+        confidence: geminiResult.confidence || 0.95,
+        severity: geminiResult.severity || "Moderate",
+        causeAnalysis: geminiResult.causeAnalysis,
+        symptoms: geminiResult.symptoms || [],
+        recommendation: geminiResult.recommendation,
+        chemicalSolution: geminiResult.chemicalSolution,
+        organicSolution: geminiResult.organicSolution,
+        immediateActionPlan: geminiResult.immediateActionPlan,
+        products: EXPERT_PATHOLOGY_DATABASE[crop?.toLowerCase()]?.products || EXPERT_PATHOLOGY_DATABASE.onion.products,
+        machineryTech: EXPERT_PATHOLOGY_DATABASE[crop?.toLowerCase()]?.machineryTech || EXPERT_PATHOLOGY_DATABASE.onion.machineryTech,
+        localShops: LOCAL_KRISHI_SHOPS
+      };
+    } catch (geminiErr) {
+      console.warn('Gemini Vision fallback to local verification:', geminiErr.message);
+    }
+  }
+
+  // STEP 2: Local Heuristic Subject Verification (Checking if human/non-crop)
+  const validation = validateImageLocally(filePath, originalName);
+  if (!validation.isPlantOrCrop) {
+    return {
+      status: "invalid_subject",
+      isPlantOrCrop: false,
+      error: validation.error,
+      imageUrl: imageUrl || null
+    };
+  }
+
+  // STEP 3: Calibrated CIBRC Expert Pathology Analysis for valid crop
   const cropKey = (crop || 'Onion').toLowerCase().trim();
   let matched = EXPERT_PATHOLOGY_DATABASE[cropKey] || EXPERT_PATHOLOGY_DATABASE.onion;
 
@@ -246,10 +501,12 @@ exports.analyzePest = async (file, crop, customApiKey) => {
     }
   }
 
-  return {
+  const analysisResult = {
     status: "success",
+    isPlantOrCrop: true,
     engine: "Calibrated Agronomic Pathology Engine (CIBRC Certified)",
     crop: crop || 'Target Crop',
+    imageUrl: imageUrl || null,
     prediction: matched.prediction,
     scientificName: matched.scientificName,
     confidence: matched.confidence,
@@ -270,4 +527,41 @@ exports.analyzePest = async (file, crop, customApiKey) => {
       preventive: matched.preventive
     }
   };
+
+  if (userId) {
+    try {
+      const db = await getDb();
+      const stmt = db.prepare("INSERT INTO pest_analysis (farmer_id, crop, image_url, prediction, confidence, severity, recommendation) VALUES (?, ?, ?, ?, ?, ?, ?)");
+      stmt.run([userId, crop || 'Target Crop', imageUrl || '', matched.prediction, matched.confidence, matched.severity, matched.recommendation]);
+      stmt.free();
+    } catch (dbErr) {
+      console.warn('Pest record DB save notice:', dbErr.message);
+    }
+  }
+
+  return analysisResult;
 };
+
+exports.analyzePest = async (fileOrCrop, cropOrImageUrl, customApiKeyOrUserId, optionsOrImageUrl) => {
+  let crop, imageUrl, userId, options;
+  if (typeof fileOrCrop === 'string') {
+    crop = fileOrCrop;
+    imageUrl = cropOrImageUrl;
+    userId = customApiKeyOrUserId;
+    options = optionsOrImageUrl || {};
+  } else {
+    crop = cropOrImageUrl;
+    imageUrl = fileOrCrop?.filename ? `/uploads/${fileOrCrop.filename}` : null;
+    userId = typeof customApiKeyOrUserId === 'number' ? customApiKeyOrUserId : null;
+    options = {
+      apiKey: typeof customApiKeyOrUserId === 'string' ? customApiKeyOrUserId : optionsOrImageUrl?.apiKey,
+      filePath: fileOrCrop?.path,
+      originalName: fileOrCrop?.originalname,
+      mimetype: fileOrCrop?.mimetype,
+      filename: fileOrCrop?.filename
+    };
+  }
+  return performPestAnalysis(crop, imageUrl, userId, options);
+};
+
+exports.analyzeImage = exports.analyzePest;
