@@ -77,22 +77,22 @@ function MapRecenter({ coords }) {
 
 const TILE_PROVIDERS = {
   satellite: {
-    name: '🛰️ Satellite Imagery',
+    key: 'baseMapSatellite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
   },
   osm: {
-    name: '🗺️ Standard Street',
+    key: 'baseMapStreet',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   },
   topo: {
-    name: '🏔️ Topographic',
+    key: 'baseMapTopo',
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
   },
   dark: {
-    name: '🌙 Dark Terrain',
+    key: 'baseMapDark',
     url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
     attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
   }
@@ -100,7 +100,7 @@ const TILE_PROVIDERS = {
 
 const GIS = () => {
   const { activeLocation, setCustomLocation } = useAuth();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [coords, setCoords] = useState({
     lat: activeLocation.latitude || 19.5772,
@@ -186,6 +186,28 @@ const GIS = () => {
     return plot.cropColor || '#2d6a4f';
   };
 
+  const getPlotRecommendation = (plot) => {
+    if (!plot) return '';
+    if (language === 'mr') {
+      if (plot.soilMoisturePercent < 28) return '💧 सकाळी ६ ते ८ दरम्यान २ तास ठिबक सिंचन सुरू करा.';
+      if (plot.pestRisk === 'High') return '🐛 संध्याकाळी कडूनिंब तेल (१०,००० ppm) किंवा जैविक कीटकनाशक फवारणी करा.';
+      if (plot.soilMoisturePercent > 50) return '⚠️ मुळांना पाणी साचू नये म्हणून शेतातील चर मोकळे करा.';
+      return '✅ पिकांचे योग्य निरीक्षण करा आणि शिफारशीत खत मात्रा चालू ठेवा.';
+    }
+    if (language === 'hi') {
+      if (plot.soilMoisturePercent < 28) return '💧 सुबह 6 से 8 बजे के बीच 2 घंटे ड्रिप सिंचाई चलाएं।';
+      if (plot.pestRisk === 'High') return '🐛 शाम को नीम तेल (10,000 ppm) या जैविक कीटनाशक का छिड़काव करें।';
+      if (plot.soilMoisturePercent > 50) return '⚠️ जड़ों में जलभराव रोकने के लिए खेत की जल निकासी नाली साफ करें।';
+      return '✅ फसल की नियमित निगरानी रखें और संतुलित पोषण बनाए रखें।';
+    }
+    return plot.recommendedAction;
+  };
+
+  const handleSendSms = (plot) => {
+    setToastMessage(`${t('smsSentToast')} ${plot.farmerName} (${plot.farmerPhone})`);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
   return (
     <DashboardLayout>
       {/* TOAST NOTIFICATION */}
@@ -221,10 +243,10 @@ const GIS = () => {
       <div className="gis-header-strip">
         <div className="gis-header-left">
           <div className="gis-header-title">
-            <span>🌾</span> AGRI-SAMADHAN GIS DASHBOARD
+            <span>🌾</span> {t('gisDashboardHeader')}
           </div>
           <div className="gis-header-subtitle">
-            <span>Interactive Farm Map &bull; 7-Layer Spatial Intelligence for</span>
+            <span>{t('gisSubTitle')}</span>
             <strong>{activeLocation.name}</strong>
             <span style={{ opacity: 0.8 }}>({coords.lat.toFixed(4)}°N, {coords.lon.toFixed(4)}°E)</span>
           </div>
@@ -236,21 +258,21 @@ const GIS = () => {
             onClick={() => setShowArchModal(true)}
             style={{ background: 'rgba(255, 255, 255, 0.25)', border: '1px solid #86efac', color: '#ffffff' }}
           >
-            <span>🏗️</span> 7-Layer Architecture
+            <span>🏗️</span> {t('gisArchitectureBtn')}
           </button>
 
           <div
             className="gis-badge-pill"
             style={{ background: '#ef4444', borderColor: '#f87171' }}
           >
-            <span>🔔</span> 3 Active Alerts
+            <span>🔔</span> {t('activeAlertsCount')}
           </div>
 
           <div
             className="gis-badge-pill"
             style={{ cursor: 'default', background: 'rgba(0,0,0,0.3)' }}
           >
-            <span>👨‍🌾</span> Farmer: <strong>{selectedPlot?.farmerName || 'Ramesh Patil'}</strong>
+            <span>👨‍🌾</span> {t('farmerLabel')}: <strong>{selectedPlot?.farmerName || 'Ramesh Patil'}</strong>
           </div>
         </div>
       </div>
@@ -262,8 +284,8 @@ const GIS = () => {
           {/* Locality Selector */}
           <div className="gis-sidebar-section">
             <div className="gis-sidebar-title">
-              <span>📍 Location & Cadastre</span>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary-600)' }}>10m Sync</span>
+              <span>📍 {t('locationCadastre')}</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary-600)' }}>{t('sync10m')}</span>
             </div>
             <select
               className="language-select-input"
@@ -287,9 +309,9 @@ const GIS = () => {
           {/* GIS SPATIAL LAYERS TOGGLE */}
           <div className="gis-sidebar-section">
             <div className="gis-sidebar-title">
-              <span>🗺️ Spatial Map Layers</span>
+              <span>🗺️ {t('spatialMapLayers')}</span>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                {Object.values(layers).filter(Boolean).length}/11 Active
+                {Object.values(layers).filter(Boolean).length}/11 {t('activeCount')}
               </span>
             </div>
 
@@ -300,7 +322,7 @@ const GIS = () => {
               >
                 <div className="gis-layer-label">
                   <span className="gis-layer-dot" style={{ background: '#2d6a4f' }}></span>
-                  <span>🟩 Farm Boundaries</span>
+                  <span>🟩 {t('layerFarmBoundaries')}</span>
                 </div>
                 <input type="checkbox" checked={layers.farmBoundaries} readOnly />
               </div>
@@ -311,7 +333,7 @@ const GIS = () => {
               >
                 <div className="gis-layer-label">
                   <span className="gis-layer-dot" style={{ background: '#e76f51' }}></span>
-                  <span>🌱 Crop Types & Stage</span>
+                  <span>🌱 {t('layerCropTypes')}</span>
                 </div>
                 <input type="checkbox" checked={layers.cropType} readOnly />
               </div>
@@ -322,7 +344,7 @@ const GIS = () => {
               >
                 <div className="gis-layer-label">
                   <span className="gis-layer-dot" style={{ background: '#10b981' }}></span>
-                  <span>🛰️ Satellite NDVI Health</span>
+                  <span>🛰️ {t('layerSatelliteHealth')}</span>
                 </div>
                 <input type="checkbox" checked={layers.satelliteCropHealth} readOnly />
               </div>
@@ -333,7 +355,7 @@ const GIS = () => {
               >
                 <div className="gis-layer-label">
                   <span className="gis-layer-dot" style={{ background: '#3b82f6' }}></span>
-                  <span>💧 Water & Canals</span>
+                  <span>💧 {t('layerWaterCanals')}</span>
                 </div>
                 <input type="checkbox" checked={layers.irrigation} readOnly />
               </div>
@@ -344,7 +366,7 @@ const GIS = () => {
               >
                 <div className="gis-layer-label">
                   <span className="gis-layer-dot" style={{ background: '#60a5fa' }}></span>
-                  <span>🌧️ Rainfall Radar</span>
+                  <span>🌧️ {t('layerRainfallRadar')}</span>
                 </div>
                 <input type="checkbox" checked={layers.rainfall} readOnly />
               </div>
@@ -355,7 +377,7 @@ const GIS = () => {
               >
                 <div className="gis-layer-label">
                   <span className="gis-layer-dot" style={{ background: '#854d0e' }}></span>
-                  <span>🟤 Soil Nutrients (NPK)</span>
+                  <span>🟤 {t('layerSoilNutrients')}</span>
                 </div>
                 <input type="checkbox" checked={layers.soilHealth} readOnly />
               </div>
@@ -366,7 +388,7 @@ const GIS = () => {
               >
                 <div className="gis-layer-label">
                   <span className="gis-layer-dot" style={{ background: '#ef4444' }}></span>
-                  <span>🐛 Pest Alert Hotspots</span>
+                  <span>🐛 {t('layerPestAlerts')}</span>
                 </div>
                 <input type="checkbox" checked={layers.pestRiskZones} readOnly />
               </div>
@@ -377,7 +399,7 @@ const GIS = () => {
               >
                 <div className="gis-layer-label">
                   <span className="gis-layer-dot" style={{ background: '#f59e0b' }}></span>
-                  <span>💰 APMC Mandis & Rates</span>
+                  <span>💰 {t('layerMandis')}</span>
                 </div>
                 <input type="checkbox" checked={layers.mandiLocations} readOnly />
               </div>
@@ -388,7 +410,7 @@ const GIS = () => {
               >
                 <div className="gis-layer-label">
                   <span className="gis-layer-dot" style={{ background: '#7c3aed' }}></span>
-                  <span>📍 IoT Sensor Nodes</span>
+                  <span>📍 {t('layerIotSensors')}</span>
                 </div>
                 <input type="checkbox" checked={layers.farmerLocation} readOnly />
               </div>
@@ -398,40 +420,40 @@ const GIS = () => {
           {/* Quick Filters */}
           <div className="gis-sidebar-section">
             <div className="gis-sidebar-title">
-              <span>🔍 Filter Plots</span>
+              <span>🔍 {t('filterPlots')}</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
               <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)' }}>Crop</label>
+                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('crop')}</label>
                 <select
                   className="language-select-input"
                   style={{ width: '100%', fontSize: '0.78rem' }}
                   value={cropFilter}
                   onChange={(e) => setCropFilter(e.target.value)}
                 >
-                  <option value="All">All Crops</option>
-                  <option value="Onion">Onion</option>
-                  <option value="Pomegranate">Pomegranate</option>
-                  <option value="Sugarcane">Sugarcane</option>
-                  <option value="Grapes">Grapes</option>
-                  <option value="Soybean">Soybean</option>
-                  <option value="Cotton">Cotton</option>
-                  <option value="Wheat">Wheat</option>
+                  <option value="All">{t('allCrops')}</option>
+                  <option value="Onion">{language === 'mr' ? 'कांदा (Onion)' : language === 'hi' ? 'प्याज (Onion)' : 'Onion'}</option>
+                  <option value="Pomegranate">{language === 'mr' ? 'डाळिंब (Pomegranate)' : language === 'hi' ? 'अनार (Pomegranate)' : 'Pomegranate'}</option>
+                  <option value="Sugarcane">{language === 'mr' ? 'ऊस (Sugarcane)' : language === 'hi' ? 'गन्ना (Sugarcane)' : 'Sugarcane'}</option>
+                  <option value="Grapes">{language === 'mr' ? 'द्राक्षे (Grapes)' : language === 'hi' ? 'अंगूर (Grapes)' : 'Grapes'}</option>
+                  <option value="Soybean">{language === 'mr' ? 'सोयाबीन (Soybean)' : language === 'hi' ? 'सोयाबीन (Soybean)' : 'Soybean'}</option>
+                  <option value="Cotton">{language === 'mr' ? 'कापूस (Cotton)' : language === 'hi' ? 'कपास (Cotton)' : 'Cotton'}</option>
+                  <option value="Wheat">{language === 'mr' ? 'गहू (Wheat)' : language === 'hi' ? 'गेहूं (Wheat)' : 'Wheat'}</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)' }}>Risk Level</label>
+                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)' }}>{t('riskLevel')}</label>
                 <select
                   className="language-select-input"
                   style={{ width: '100%', fontSize: '0.78rem' }}
                   value={riskFilter}
                   onChange={(e) => setRiskFilter(e.target.value)}
                 >
-                  <option value="All">All Risks</option>
-                  <option value="High">⚠️ High Risk</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low / Safe</option>
+                  <option value="All">{t('allRisks')}</option>
+                  <option value="High">⚠️ {t('highRisk')}</option>
+                  <option value="Medium">{t('mediumRisk')}</option>
+                  <option value="Low">{t('lowRisk')}</option>
                 </select>
               </div>
             </div>
@@ -445,38 +467,38 @@ const GIS = () => {
                   {selectedPlot.cropIcon} {selectedPlot.crop}
                 </span>
                 <span className={`badge badge-${selectedPlot.pestRisk === 'High' ? 'danger' : 'success'}`}>
-                  {selectedPlot.pestRisk} Risk
+                  {selectedPlot.pestRisk === 'High' ? t('highRisk') : selectedPlot.pestRisk === 'Medium' ? t('mediumRisk') : t('lowRisk')}
                 </span>
               </div>
 
               <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                Survey No: <strong>{selectedPlot.surveyNo}</strong> &bull; Owner: <strong>{selectedPlot.farmerName}</strong>
+                {t('surveyNo')}: <strong>{selectedPlot.surveyNo}</strong> &bull; {t('owner')}: <strong>{selectedPlot.farmerName}</strong>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.75rem', fontSize: '0.78rem' }}>
                 <div style={{ background: '#ffffff', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-sm)', border: '1px solid #e5e7eb' }}>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>Area</div>
-                  <strong>{selectedPlot.areaAcres} Acres</strong>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>{t('area')}</div>
+                  <strong>{selectedPlot.areaAcres} {t('acres')}</strong>
                 </div>
 
                 <div style={{ background: '#ffffff', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-sm)', border: '1px solid #e5e7eb' }}>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>NDVI Health</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>{t('ndviHealth')}</div>
                   <strong style={{ color: selectedPlot.ndvi > 0.7 ? '#10b981' : '#f59e0b' }}>{selectedPlot.ndvi} ({selectedPlot.healthStatus})</strong>
                 </div>
 
                 <div style={{ background: '#ffffff', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-sm)', border: '1px solid #e5e7eb' }}>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>Soil Moisture</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>{t('soilMoisture')}</div>
                   <strong>{selectedPlot.soilMoisturePercent}%</strong>
                 </div>
 
                 <div style={{ background: '#ffffff', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-sm)', border: '1px solid #e5e7eb' }}>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>Est. Yield</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>{t('estimatedYield')}</div>
                   <strong>{selectedPlot.estimatedYield}</strong>
                 </div>
               </div>
 
               <div style={{ marginTop: '0.75rem', fontSize: '0.78rem', color: '#166534', background: '#dcfce7', padding: '0.5rem', borderRadius: 'var(--radius-sm)' }}>
-                <strong>Agronomic Directive:</strong> {selectedPlot.recommendedAction}
+                <strong>{t('agronomicDirective')}:</strong> {getPlotRecommendation(selectedPlot)}
               </div>
             </div>
           )}
@@ -492,7 +514,7 @@ const GIS = () => {
                 className={`gis-tool-btn ${activeBaseMap === key ? 'active' : ''}`}
                 onClick={() => setActiveBaseMap(key)}
               >
-                {TILE_PROVIDERS[key].name}
+                {t(TILE_PROVIDERS[key].key)}
               </button>
             ))}
           </div>
@@ -529,7 +551,7 @@ const GIS = () => {
               >
                 <Tooltip direction="center" permanent={false} opacity={0.9}>
                   <div>
-                    <strong>{plot.cropIcon} {plot.crop}</strong> ({plot.areaAcres} Ac)<br />
+                    <strong>{plot.cropIcon} {plot.crop}</strong> ({plot.areaAcres} {t('acres')})<br />
                     <span>{plot.farmerName} &bull; NDVI {plot.ndvi}</span>
                   </div>
                 </Tooltip>
@@ -541,30 +563,30 @@ const GIS = () => {
                         {plot.cropIcon} {plot.crop}
                       </strong>
                       <span className={`badge badge-${plot.pestRisk === 'High' ? 'danger' : 'success'}`}>
-                        {plot.pestRisk} Risk
+                        {plot.pestRisk === 'High' ? t('highRisk') : plot.pestRisk === 'Medium' ? t('mediumRisk') : t('lowRisk')}
                       </span>
                     </div>
 
                     <div style={{ fontSize: '0.82rem', lineHeight: '1.4', color: '#374151' }}>
-                      <div><strong>Farmer:</strong> {plot.farmerName} ({plot.farmerPhone})</div>
-                      <div><strong>Survey No:</strong> {plot.surveyNo} | <strong>Area:</strong> {plot.areaAcres} Acres</div>
-                      <div><strong>Stage:</strong> {plot.cropStage} ({plot.cropVariety})</div>
-                      <div><strong>NDVI Health:</strong> <strong style={{ color: '#10b981' }}>{plot.ndvi}</strong> ({plot.healthStatus})</div>
-                      <div><strong>Soil Moisture:</strong> {plot.soilMoisturePercent}%</div>
-                      <div><strong>Water Source:</strong> {plot.waterSource}</div>
-                      <div><strong>Yield Forecast:</strong> {plot.estimatedYield}</div>
+                      <div><strong>{t('farmerLabel')}:</strong> {plot.farmerName} ({plot.farmerPhone})</div>
+                      <div><strong>{t('surveyNo')}:</strong> {plot.surveyNo} | <strong>{t('area')}:</strong> {plot.areaAcres} {t('acres')}</div>
+                      <div><strong>{t('stage')}:</strong> {plot.cropStage} ({plot.cropVariety})</div>
+                      <div><strong>{t('ndviHealth')}:</strong> <strong style={{ color: '#10b981' }}>{plot.ndvi}</strong> ({plot.healthStatus})</div>
+                      <div><strong>{t('soilMoisture')}:</strong> {plot.soilMoisturePercent}%</div>
+                      <div><strong>{t('waterSource')}:</strong> {plot.waterSource}</div>
+                      <div><strong>{t('yieldForecast')}:</strong> {plot.estimatedYield}</div>
                     </div>
 
                     <div style={{ background: '#f0fdf4', padding: '6px', borderRadius: '4px', marginTop: '8px', fontSize: '0.78rem', color: '#15803d' }}>
-                      <strong>AI Advice:</strong> {plot.recommendedAction}
+                      <strong>{t('aiAdvice')}:</strong> {getPlotRecommendation(plot)}
                     </div>
 
                     <button
                       className="btn btn-sm btn-primary"
                       style={{ width: '100%', marginTop: '8px', fontSize: '0.78rem', padding: '4px 8px' }}
-                      onClick={() => openSmsForPlot(plot)}
+                      onClick={() => handleSendSms(plot)}
                     >
-                      📲 Send Alert SMS
+                      📲 {t('sendAlertSms')}
                     </button>
                   </div>
                 </Popup>
@@ -583,7 +605,7 @@ const GIS = () => {
                     <Popup>
                       <div>
                         <strong style={{ color: '#0284c7' }}>💧 {infra.name}</strong><br />
-                        <span>Discharge: {infra.discharge}</span><br />
+                        <span>{t('discharge')}: {infra.discharge}</span><br />
                         <span className="badge badge-info">{infra.status}</span>
                       </div>
                     </Popup>
@@ -599,8 +621,8 @@ const GIS = () => {
                   <Popup>
                     <div>
                       <strong>{infra.name}</strong><br />
-                      <span>Type: {infra.type}</span><br />
-                      <span>Capacity/Yield: {infra.yield || infra.capacity}</span>
+                      <span>{t('crop')}: {infra.type}</span><br />
+                      <span>{t('capacityYield')}: {infra.yield || infra.capacity}</span>
                     </div>
                   </Popup>
                 </Marker>
@@ -624,8 +646,8 @@ const GIS = () => {
                 <Popup>
                   <div style={{ maxWidth: '240px' }}>
                     <strong style={{ color: '#dc2626' }}>🐛 {pest.name}</strong><br />
-                    <span style={{ fontSize: '0.8rem', color: '#666' }}>Pest: {pest.pestName}</span><br />
-                    <span className="badge badge-danger">High Severity Hotspot</span>
+                    <span style={{ fontSize: '0.8rem', color: '#666' }}>{pest.pestName}</span><br />
+                    <span className="badge badge-danger">{t('highSeverityHotspot')}</span>
                     <p style={{ fontSize: '0.78rem', marginTop: '6px', color: '#333' }}>
                       {pest.advice}
                     </p>
@@ -644,9 +666,9 @@ const GIS = () => {
                 <Popup>
                   <div style={{ minWidth: '200px' }}>
                     <strong style={{ color: '#b45309' }}>🏛️ {mandi.name}</strong><br />
-                    <span style={{ fontSize: '0.78rem', color: '#666' }}>Distance: ~{mandi.distanceKm} km</span>
+                    <span style={{ fontSize: '0.78rem', color: '#666' }}>{t('distance')}: ~{mandi.distanceKm} km</span>
                     <div style={{ marginTop: '8px' }}>
-                      <strong style={{ fontSize: '0.82rem' }}>Live Trading Rates:</strong>
+                      <strong style={{ fontSize: '0.82rem' }}>{t('liveTradingRates')}:</strong>
                       {mandi.rates.map((r, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', padding: '2px 0', borderBottom: '1px dotted #e5e7eb' }}>
                           <span>{r.commodity}:</span>
@@ -670,11 +692,11 @@ const GIS = () => {
                   <div>
                     <strong style={{ color: '#6d28d9' }}>📡 {sensor.name}</strong><br />
                     <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>
-                      <div>Soil Moisture (10cm): <strong>{sensor.soilMoisture10cm}</strong></div>
-                      <div>Soil Temp: <strong>{sensor.soilTemp}</strong></div>
-                      <div>Leaf Wetness: <strong>{sensor.leafWetness}</strong></div>
-                      <div>Solar Battery: <strong>{sensor.battery}</strong></div>
-                      <div style={{ color: '#888', fontSize: '0.72rem', marginTop: '4px' }}>Ping: {sensor.lastPing}</div>
+                      <div>{t('soilMoisture10cm')}: <strong>{sensor.soilMoisture10cm}</strong></div>
+                      <div>{t('soilTemp')}: <strong>{sensor.soilTemp}</strong></div>
+                      <div>{t('leafWetness')}: <strong>{sensor.leafWetness}</strong></div>
+                      <div>{t('solarBattery')}: <strong>{sensor.battery}</strong></div>
+                      <div style={{ color: '#888', fontSize: '0.72rem', marginTop: '4px' }}>{t('lastPing')}: {sensor.lastPing}</div>
                     </div>
                   </div>
                 </Popup>
@@ -685,9 +707,9 @@ const GIS = () => {
             <Marker position={[coords.lat, coords.lon]}>
               <Popup>
                 <div>
-                  <strong style={{ color: '#2d6a4f' }}>📍 Farm Core Center</strong><br />
+                  <strong style={{ color: '#2d6a4f' }}>📍 {t('farmCoreCenter')}</strong><br />
                   <span>Lat: {coords.lat.toFixed(4)}°N | Lon: {coords.lon.toFixed(4)}°E</span><br />
-                  <span style={{ fontSize: '0.78rem', color: '#666' }}>Click anywhere on map to reposition</span>
+                  <span style={{ fontSize: '0.78rem', color: '#666' }}>{t('clickReposition')}</span>
                 </div>
               </Popup>
             </Marker>
@@ -696,29 +718,27 @@ const GIS = () => {
           {/* Map Legend Floating Box */}
           <div className="gis-map-legend">
             <div style={{ fontWeight: 800, color: 'var(--primary-900)', marginBottom: '0.4rem' }}>
-              📊 Spatial Legend
+              📊 {t('spatialLegend')}
             </div>
             <div className="gis-legend-row">
               <span style={{ width: '12px', height: '12px', background: '#10b981', display: 'inline-block', borderRadius: '2px' }}></span>
-              <span>Healthy Canopy (NDVI &gt; 0.70)</span>
+              <span>{t('legendHealthy')}</span>
             </div>
             <div className="gis-legend-row">
               <span style={{ width: '12px', height: '12px', background: '#f59e0b', display: 'inline-block', borderRadius: '2px' }}></span>
-              <span>Moderate Stress / Onion Plots</span>
+              <span>{t('legendModerate')}</span>
             </div>
             <div className="gis-legend-row">
               <span style={{ width: '12px', height: '12px', background: '#ef4444', display: 'inline-block', borderRadius: '2px' }}></span>
-              <span>High Risk / Pest Outbreak Hotspot</span>
+              <span>{t('legendHighRisk')}</span>
             </div>
             <div className="gis-legend-row">
               <span style={{ width: '12px', height: '3px', background: '#0284c7', display: 'inline-block' }}></span>
-              <span>Active Irrigation Canal Network</span>
+              <span>{t('legendCanal')}</span>
             </div>
           </div>
         </div>
       </div>
-
-
 
       {/* 7-LAYER ARCHITECTURE MODAL */}
       {showArchModal && (
@@ -727,10 +747,10 @@ const GIS = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-light)', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
               <div>
                 <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary-900)' }}>
-                  🌾 7-Layer Agricultural GIS Architecture
+                  🌾 {t('gisArchTitle')}
                 </h2>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  End-to-end telemetry flow from multi-sensor data sources to localized farmer action.
+                  {t('gisArchSubtitle')}
                 </p>
               </div>
               <button
@@ -745,64 +765,64 @@ const GIS = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {/* Layer 1 */}
               <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #bbf7d0' }}>
-                <div style={{ fontWeight: 800, color: '#166534', fontSize: '0.95rem' }}>1. Data Sources</div>
+                <div style={{ fontWeight: 800, color: '#166534', fontSize: '0.95rem' }}>{t('gisL1Title')}</div>
                 <div style={{ fontSize: '0.82rem', color: '#1f2937', marginTop: '0.25rem' }}>
-                  Weather APIs (IMD/OpenMeteo) + Sentinel-2 Satellite (NDVI/EVI) + In-situ IoT Soil Sensors + Groundwater + Crop Telemetry + Mandi Rates + Govt Schemes.
+                  {t('gisL1Desc')}
                 </div>
               </div>
 
               {/* Layer 2 */}
               <div style={{ background: '#eff6ff', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #bfdbfe' }}>
-                <div style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.95rem' }}>2. Data Integration Layer</div>
+                <div style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.95rem' }}>{t('gisL2Title')}</div>
                 <div style={{ fontSize: '0.82rem', color: '#1f2937', marginTop: '0.25rem' }}>
-                  ETL spatial engine, coordinate projection (EPSG:4326), sensor noise filtering, and multi-spectral raster harmonization.
+                  {t('gisL2Desc')}
                 </div>
               </div>
 
               {/* Layer 3 */}
               <div style={{ background: '#faf5ff', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #e9d5ff' }}>
-                <div style={{ fontWeight: 800, color: '#6b21a8', fontSize: '0.95rem' }}>3. GIS Layer</div>
+                <div style={{ fontWeight: 800, color: '#6b21a8', fontSize: '0.95rem' }}>{t('gisL3Title')}</div>
                 <div style={{ fontSize: '0.82rem', color: '#1f2937', marginTop: '0.25rem' }}>
-                  Vector farm boundaries, cadastral Survey No indexing, irrigation canals, thermal layers, and APMC geo-tagging.
+                  {t('gisL3Desc')}
                 </div>
               </div>
 
               {/* Layer 4 */}
               <div style={{ background: '#fffbeb', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #fde68a' }}>
-                <div style={{ fontWeight: 800, color: '#92400e', fontSize: '0.95rem' }}>4. AI / Analytics Layer</div>
+                <div style={{ fontWeight: 800, color: '#92400e', fontSize: '0.95rem' }}>{t('gisL4Title')}</div>
                 <div style={{ fontSize: '0.82rem', color: '#1f2937', marginTop: '0.25rem' }}>
-                  Crop Water Stress Index (CWSI), epidemiology pest propagation models, weather risk scoring, and yield forecasting algorithms.
+                  {t('gisL4Desc')}
                 </div>
               </div>
 
               {/* Layer 5 */}
               <div style={{ background: '#fff7ed', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #ffedd5' }}>
-                <div style={{ fontWeight: 800, color: '#9a3412', fontSize: '0.95rem' }}>5. Decision Support Layer</div>
+                <div style={{ fontWeight: 800, color: '#9a3412', fontSize: '0.95rem' }}>{t('gisL5Title')}</div>
                 <div style={{ fontSize: '0.82rem', color: '#1f2937', marginTop: '0.25rem' }}>
-                  Rule engine converting multi-source indices into ranked agronomic priorities and threshold triggers.
+                  {t('gisL5Desc')}
                 </div>
               </div>
 
               {/* Layer 6 */}
               <div style={{ background: '#fdf2f8', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #fbcfe8' }}>
-                <div style={{ fontWeight: 800, color: '#9d174d', fontSize: '0.95rem' }}>6. Farmer Advisory Layer</div>
+                <div style={{ fontWeight: 800, color: '#9d174d', fontSize: '0.95rem' }}>{t('gisL6Title')}</div>
                 <div style={{ fontSize: '0.82rem', color: '#1f2937', marginTop: '0.25rem' }}>
-                  Multilingual localization into English, Marathi (मराठी), and Hindi (हिंदी) with simple, actionable field instructions.
+                  {t('gisL6Desc')}
                 </div>
               </div>
 
               {/* Layer 7 */}
               <div style={{ background: '#f0fdfa', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid #99f6e4' }}>
-                <div style={{ fontWeight: 800, color: '#115e59', fontSize: '0.95rem' }}>7. Dashboard & Alerts Layer</div>
+                <div style={{ fontWeight: 800, color: '#115e59', fontSize: '0.95rem' }}>{t('gisL7Title')}</div>
                 <div style={{ fontSize: '0.82rem', color: '#1f2937', marginTop: '0.25rem' }}>
-                  Interactive Leaflet map, real-time alert center, SMS/WhatsApp dispatcher, and action pipeline execution.
+                  {t('gisL7Desc')}
                 </div>
               </div>
             </div>
 
             <div style={{ marginTop: '1.5rem', textAlign: 'right' }}>
               <button className="btn btn-primary" onClick={() => setShowArchModal(false)}>
-                Close Architecture Explorer
+                {t('closeExplorer')}
               </button>
             </div>
           </div>
