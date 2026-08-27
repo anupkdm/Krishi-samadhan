@@ -70,7 +70,7 @@ function MapClickHandler({ onCoordinateClick }) {
 function MapRecenter({ coords }) {
   const map = useMap();
   useEffect(() => {
-    map.setView([coords.lat, coords.lon], 14, { animate: true });
+    map.setView([coords.lat, coords.lon], 16, { animate: true });
   }, [coords, map]);
   return null;
 }
@@ -521,7 +521,7 @@ const GIS = () => {
 
           <MapContainer
             center={[coords.lat, coords.lon]}
-            zoom={14}
+            zoom={16}
             style={{ height: '100%', width: '100%' }}
             scrollWheelZoom={true}
           >

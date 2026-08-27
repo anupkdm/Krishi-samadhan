@@ -38,37 +38,110 @@ const generateFarmPlots = (lat, lon) => {
         { name: 'Chandrakant Thorat', phone: '+91 98814 66723', surveyNo: '128/2A' }
     ];
 
-    const delta = 0.008; // coordinate spread for plots
+    const parcelGeometries = [
+        {
+            polygon: [
+                [lat + 0.0003, lon - 0.0018],
+                [lat + 0.0003, lon - 0.0007],
+                [lat + 0.0014, lon - 0.0006],
+                [lat + 0.0013, lon - 0.0018],
+                [lat + 0.0003, lon - 0.0018]
+            ],
+            center: [lat + 0.00085, lon - 0.00125],
+            areaAcres: 2.6
+        },
+        {
+            polygon: [
+                [lat + 0.0003, lon - 0.0006],
+                [lat + 0.0003, lon + 0.0005],
+                [lat + 0.0014, lon + 0.0006],
+                [lat + 0.0014, lon - 0.0005],
+                [lat + 0.0003, lon - 0.0006]
+            ],
+            center: [lat + 0.00085, lon + 0.00000],
+            areaAcres: 2.4
+        },
+        {
+            polygon: [
+                [lat + 0.0003, lon + 0.0006],
+                [lat + 0.0003, lon + 0.0017],
+                [lat + 0.0013, lon + 0.0018],
+                [lat + 0.0014, lon + 0.0007],
+                [lat + 0.0003, lon + 0.0006]
+            ],
+            center: [lat + 0.00085, lon + 0.00120],
+            areaAcres: 2.5
+        },
+        {
+            polygon: [
+                [lat - 0.0008, lon - 0.0018],
+                [lat - 0.0008, lon - 0.0007],
+                [lat + 0.0002, lon - 0.0007],
+                [lat + 0.0002, lon - 0.0018],
+                [lat - 0.0008, lon - 0.0018]
+            ],
+            center: [lat - 0.00030, lon - 0.00125],
+            areaAcres: 2.3
+        },
+        {
+            polygon: [
+                [lat - 0.0008, lon - 0.0006],
+                [lat - 0.0008, lon + 0.0005],
+                [lat + 0.0002, lon + 0.0005],
+                [lat + 0.0002, lon - 0.0006],
+                [lat - 0.0008, lon - 0.0006]
+            ],
+            center: [lat - 0.00030, lon - 0.00005],
+            areaAcres: 2.5
+        },
+        {
+            polygon: [
+                [lat - 0.0008, lon + 0.0006],
+                [lat - 0.0008, lon + 0.0017],
+                [lat + 0.0002, lon + 0.0017],
+                [lat + 0.0002, lon + 0.0006],
+                [lat - 0.0008, lon + 0.0006]
+            ],
+            center: [lat - 0.00030, lon + 0.00115],
+            areaAcres: 2.4
+        },
+        {
+            polygon: [
+                [lat - 0.0018, lon - 0.0015],
+                [lat - 0.0018, lon - 0.0001],
+                [lat - 0.0009, lon - 0.0001],
+                [lat - 0.0009, lon - 0.0015],
+                [lat - 0.0018, lon - 0.0015]
+            ],
+            center: [lat - 0.00135, lon - 0.00080],
+            areaAcres: 2.8
+        },
+        {
+            polygon: [
+                [lat - 0.0018, lon + 0.0001],
+                [lat - 0.0018, lon + 0.0015],
+                [lat - 0.0009, lon + 0.0015],
+                [lat - 0.0009, lon + 0.0001],
+                [lat - 0.0018, lon + 0.0001]
+            ],
+            center: [lat - 0.00135, lon + 0.00080],
+            areaAcres: 2.7
+        }
+    ];
 
     return farmers.map((farmer, idx) => {
         const crop = crops[idx % crops.length];
-        const offsetLat = (Math.sin(idx * 1.2) * delta) + ((idx % 3 - 1) * 0.004);
-        const offsetLon = (Math.cos(idx * 1.2) * delta) + ((Math.floor(idx / 3) - 1) * 0.004);
+        const geo = parcelGeometries[idx] || parcelGeometries[0];
 
-        const centerLat = lat + offsetLat;
-        const centerLon = lon + offsetLon;
-        const sizeLat = 0.0022 + (idx * 0.0003);
-        const sizeLon = 0.0025 + (idx * 0.0002);
-
-        // NDVI & Health properties
-        const ndvi = Number((0.45 + (idx * 0.06) % 0.45).toFixed(2));
-        const moisture = Math.round(20 + ((idx * 13) % 45));
-        const areaAcres = Number((2.0 + (idx * 0.65)).toFixed(1));
-        const isFloodRisk = idx === 0 || idx === 4;
-        const isPestRisk = idx === 1 || idx === 3;
+        const ndvi = Number((0.55 + (idx * 0.05) % 0.35).toFixed(2));
+        const moisture = Math.round(24 + ((idx * 11) % 40));
+        const areaAcres = geo.areaAcres;
+        const isFloodRisk = idx === 0 || idx === 6;
+        const isPestRisk = idx === 1 || idx === 4;
 
         const healthStatus = ndvi > 0.7 ? 'Optimal' : ndvi >= 0.5 ? 'Moderate' : 'Stressed';
         const pestRisk = isPestRisk ? 'High' : idx % 2 === 0 ? 'Medium' : 'Low';
         const waterRequirement = moisture < 30 ? 'Immediate Drip Required (90 min)' : moisture > 55 ? 'Excess Water - Drainage Needed' : 'Adequate Moisture';
-
-        // Polygon coordinates [ [lat, lon], [lat, lon], ... ]
-        const polygon = [
-            [centerLat - sizeLat, centerLon - sizeLon],
-            [centerLat - sizeLat, centerLon + sizeLon],
-            [centerLat + sizeLat * 0.9, centerLon + sizeLon * 1.1],
-            [centerLat + sizeLat, centerLon - sizeLon * 0.9],
-            [centerLat - sizeLat, centerLon - sizeLon]
-        ];
 
         return {
             id: `farm-plot-${idx + 1}`,
@@ -81,8 +154,8 @@ const generateFarmPlots = (lat, lon) => {
             cropColor: crop.color,
             cropStage: crop.stage,
             areaAcres,
-            center: [centerLat, centerLon],
-            polygon,
+            center: geo.center,
+            polygon: geo.polygon,
             soilType: idx % 2 === 0 ? 'Deep Vertisol (Black Cotton Soil)' : 'Medium Clay Loam',
             soilMoisturePercent: moisture,
             ndvi,
@@ -110,9 +183,9 @@ const getNearbyMandis = (lat, lon) => {
         {
             id: 'mandi-1',
             name: 'Sangamner Main APMC',
-            lat: lat + 0.012,
-            lon: lon - 0.008,
-            distanceKm: 4.2,
+            lat: lat + 0.007,
+            lon: lon - 0.005,
+            distanceKm: 2.1,
             rates: [
                 { commodity: 'Onion (Red)', min: 2200, max: 2950, modal: 2820, unit: '₹/qtl', trend: 'up' },
                 { commodity: 'Tomato', min: 1400, max: 2100, modal: 1950, unit: '₹/qtl', trend: 'stable' },
@@ -122,9 +195,9 @@ const getNearbyMandis = (lat, lon) => {
         {
             id: 'mandi-2',
             name: 'Kopargaon Sub-Market Yard',
-            lat: lat - 0.018,
-            lon: lon + 0.015,
-            distanceKm: 9.8,
+            lat: lat - 0.008,
+            lon: lon + 0.007,
+            distanceKm: 3.4,
             rates: [
                 { commodity: 'Soybean', min: 4200, max: 4850, modal: 4680, unit: '₹/qtl', trend: 'up' },
                 { commodity: 'Wheat (Lokwan)', min: 2450, max: 2900, modal: 2750, unit: '₹/qtl', trend: 'stable' },
@@ -134,9 +207,9 @@ const getNearbyMandis = (lat, lon) => {
         {
             id: 'mandi-3',
             name: 'Nashik / Sinnar Regional APMC Hub',
-            lat: lat + 0.025,
-            lon: lon + 0.022,
-            distanceKm: 16.5,
+            lat: lat + 0.009,
+            lon: lon + 0.009,
+            distanceKm: 4.8,
             rates: [
                 { commodity: 'Grapes (Export)', min: 7200, max: 11500, modal: 9800, unit: '₹/qtl', trend: 'up' },
                 { commodity: 'Onion (Garva)', min: 2400, max: 3100, modal: 2900, unit: '₹/qtl', trend: 'up' },
@@ -152,14 +225,14 @@ const getWaterInfrastructure = (lat, lon) => {
         {
             id: 'water-1',
             type: 'Canal',
-            name: 'Godavari Left Bank Distributary #4',
+            name: 'Field Distributary Canal #4',
             discharge: '45 Cusecs (Flow Active)',
             status: 'Operational',
             coordinates: [
-                [lat - 0.02, lon - 0.025],
-                [lat - 0.01, lon - 0.012],
-                [lat + 0.005, lon + 0.005],
-                [lat + 0.018, lon + 0.022]
+                [lat + 0.0016, lon - 0.0020],
+                [lat + 0.0015, lon - 0.0006],
+                [lat + 0.0015, lon + 0.0007],
+                [lat + 0.0014, lon + 0.0020]
             ]
         },
         {
@@ -168,8 +241,8 @@ const getWaterInfrastructure = (lat, lon) => {
             name: 'Solar Pump #KS-204',
             depth: '280 ft',
             yield: '4,500 LPH',
-            lat: lat + 0.006,
-            lon: lon - 0.004,
+            lat: lat + 0.00025,
+            lon: lon - 0.00065,
             status: 'Active'
         },
         {
@@ -177,8 +250,8 @@ const getWaterInfrastructure = (lat, lon) => {
             type: 'Farm Pond (Shettale)',
             name: 'Lined Farm Pond (50 Lakh L)',
             capacity: '82% Full',
-            lat: lat - 0.007,
-            lon: lon + 0.008,
+            lat: lat - 0.00135,
+            lon: lon + 0.0017,
             status: 'Water Secure'
         }
     ];
@@ -192,8 +265,8 @@ const getPestHotspots = (lat, lon) => {
             name: 'Thrips & Purple Blotch Alert Zone',
             pestName: 'Thrips tabaci / Alternaria porri',
             severity: 'High',
-            radiusMeters: 650,
-            center: [lat + 0.005, lon + 0.006],
+            radiusMeters: 85,
+            center: [lat - 0.00030, lon - 0.00005],
             affectedCrops: ['Onion', 'Garlic'],
             advice: 'Spray Emamectin Benzoate 5% SG (4g/10L) + Mancozeb (25g/10L) with wetting agent.'
         },
@@ -202,8 +275,8 @@ const getPestHotspots = (lat, lon) => {
             name: 'Bacterial Blight (Telya) Micro-Pocket',
             pestName: 'Xanthomonas axonopodis',
             severity: 'Moderate',
-            radiusMeters: 450,
-            center: [lat - 0.008, lon - 0.006],
+            radiusMeters: 75,
+            center: [lat + 0.00085, lon + 0.00120],
             affectedCrops: ['Pomegranate', 'Citrus'],
             advice: 'Foliar spray Copper Oxychloride 50% WP (2.5g/L) + Streptocycline (1g/10L).'
         }
@@ -217,8 +290,8 @@ const getSoilGrids = (lat, lon) => {
             id: 'soil-grid-1',
             zone: 'North Valley Lowland',
             bounds: [
-                [lat, lon - 0.015],
-                [lat + 0.015, lon + 0.01]
+                [lat + 0.0002, lon - 0.0019],
+                [lat + 0.0016, lon + 0.0019]
             ],
             soilType: 'Deep Vertisol (Black Cotton)',
             ph: 7.6,
@@ -233,8 +306,8 @@ const getSoilGrids = (lat, lon) => {
             id: 'soil-grid-2',
             zone: 'South Upland Ridge',
             bounds: [
-                [lat - 0.015, lon - 0.015],
-                [lat, lon + 0.015]
+                [lat - 0.0019, lon - 0.0019],
+                [lat + 0.0001, lon + 0.0019]
             ],
             soilType: 'Medium Clay Loam / Murrum Underlay',
             ph: 7.2,
@@ -254,8 +327,8 @@ const getSensorTelemetry = (lat, lon) => {
         {
             id: 'iot-node-1',
             name: 'Field IoT Node #01 (Alpha Plot)',
-            lat: lat + 0.003,
-            lon: lon + 0.004,
+            lat: lat - 0.00030,
+            lon: lon - 0.00005,
             soilMoisture10cm: '34%',
             soilMoisture30cm: '41%',
             soilTemp: '24.8°C',
@@ -266,14 +339,14 @@ const getSensorTelemetry = (lat, lon) => {
         {
             id: 'iot-node-2',
             name: 'Field IoT Node #02 (Beta Plot)',
-            lat: lat - 0.004,
-            lon: lon - 0.003,
-            soilMoisture10cm: '22%',
-            soilMoisture30cm: '29%',
-            soilTemp: '26.2°C',
-            leafWetness: '4%',
+            lat: lat + 0.00085,
+            lon: lon - 0.00125,
+            soilMoisture10cm: '27%',
+            soilMoisture30cm: '33%',
+            soilTemp: '26.1°C',
+            leafWetness: '8%',
             battery: '88% (Solar)',
-            lastPing: '5 mins ago'
+            lastPing: '4 mins ago'
         }
     ];
 };
