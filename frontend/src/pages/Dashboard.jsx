@@ -230,30 +230,44 @@ const Dashboard = () => {
             }}
           />
 
-          {/* Agricultural Drone Flying & Scanning */}
+          {/* Agricultural Drone / UFO Flying & Scanning Forward */}
           <div
             style={{
               position: 'absolute',
-              top: '25px',
-              right: '-80px',
-              width: '60px',
-              height: '30px',
-              animation: 'droneFlyAcross 22s ease-in-out infinite'
+              top: '18px',
+              left: '-80px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              animation: 'droneFlyAcross 22s ease-in-out infinite',
+              zIndex: 1,
+              pointerEvents: 'none'
             }}
           >
             {/* Drone Icon */}
-            <div style={{ fontSize: '1.6rem', textAlign: 'center', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }}>
-              🛸
-            </div>
-            {/* Scan Beam */}
             <div
               style={{
-                width: '50px',
+                fontSize: '1.8rem',
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))'
+              }}
+            >
+              🛸
+            </div>
+            {/* Perfectly Centered Light Beam */}
+            <div
+              style={{
+                width: '64px',
                 height: '80px',
-                margin: '-5px auto 0',
-                background: 'linear-gradient(180deg, rgba(74, 222, 128, 0.4) 0%, rgba(34, 197, 94, 0) 100%)',
-                clipPath: 'polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%)',
-                animation: 'scanPulse 2s ease-in-out infinite alternate'
+                marginTop: '-2px',
+                background: 'linear-gradient(180deg, rgba(74, 222, 128, 0.6) 0%, rgba(34, 197, 94, 0.15) 60%, rgba(34, 197, 94, 0) 100%)',
+                clipPath: 'polygon(36% 0%, 64% 0%, 100% 100%, 0% 100%)',
+                animation: 'scanPulse 2s ease-in-out infinite alternate',
+                transformOrigin: '50% 0%'
               }}
             />
           </div>
@@ -272,20 +286,21 @@ const Dashboard = () => {
             }}
           />
 
-          {/* Animated Tractor Driving Across Fields */}
+          {/* Animated Tractor Driving Forward Across Fields */}
           <div
             style={{
               position: 'absolute',
-              bottom: '10px',
+              bottom: '12px',
               left: '-70px',
               width: '50px',
               height: '35px',
               fontSize: '1.8rem',
               animation: 'tractorDriveAcross 24s linear infinite',
-              filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.35))'
+              filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.35))',
+              zIndex: 1
             }}
           >
-            🚜
+            <span style={{ display: 'inline-block', transform: 'scaleX(-1)' }}>🚜</span>
           </div>
         </div>
 
