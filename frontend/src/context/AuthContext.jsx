@@ -52,17 +52,23 @@ export const AuthProvider = ({ children }) => {
     setIsProfileModalOpen(false);
   };
 
-  const changeActiveLocation = (locationKey) => {
-    if (AVAILABLE_LOCATIONS[locationKey]) {
-      localStorage.setItem('activeLocation', locationKey);
-      setActiveLocation(AVAILABLE_LOCATIONS[locationKey]);
+  const changeActiveLocation = (locationKeyOrObject) => {
+    let key = typeof locationKeyOrObject === 'string' ? locationKeyOrObject : null;
+    if (!key && locationKeyOrObject && locationKeyOrObject.name) {
+      key = Object.keys(AVAILABLE_LOCATIONS).find(k => AVAILABLE_LOCATIONS[k].name === locationKeyOrObject.name);
+    }
+    if (key && AVAILABLE_LOCATIONS[key]) {
+      localStorage.setItem('activeLocation', key);
+      setActiveLocation(AVAILABLE_LOCATIONS[key]);
 
       // If logged in, also update user's location in localStorage
       if (user) {
-        const updated = { ...user, location: `${locationKey}, Maharashtra` };
+        const updated = { ...user, location: `${key}, Maharashtra` };
         localStorage.setItem('user', JSON.stringify(updated));
         setUser(updated);
       }
+    } else if (locationKeyOrObject && typeof locationKeyOrObject === 'object' && locationKeyOrObject.latitude && locationKeyOrObject.longitude) {
+      setActiveLocation(locationKeyOrObject);
     }
   };
 
@@ -79,6 +85,7 @@ export const AuthProvider = ({ children }) => {
       loginUser,
       logoutUser,
       changeActiveLocation,
+      setCustomLocation: changeActiveLocation,
       availableLocations: AVAILABLE_LOCATIONS
     }}>
       {children}

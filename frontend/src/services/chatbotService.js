@@ -62,10 +62,31 @@ export const sendMessage = async (message, context = {}) => {
   }
 
   // Instant client-side intelligent agronomic friend AI companion
-  const query = (message || '').trim().toLowerCase();
-  const locName = location.name || "Sangamner / Ahmednagar";
+  const rawQuery = (message || '').trim();
+  const query = rawQuery.toLowerCase();
+
+  // Detect script and language
+  const hasDevanagari = /[\u0900-\u097F]/.test(rawQuery);
+  const hasLatin = /[a-zA-Z]/.test(rawQuery);
+  let targetLang = language || 'en';
+
+  if (hasLatin && !hasDevanagari) {
+    targetLang = 'en';
+  } else if (hasDevanagari) {
+    const mrMarkers = ['आहे', 'कसा', 'काय', 'हवामान', 'पाऊस', 'कांदा', 'सांगा', 'शेत', 'पिके'];
+    if (mrMarkers.some(m => rawQuery.includes(m)) || language === 'mr') {
+      targetLang = 'mr';
+    } else {
+      targetLang = language === 'hi' ? 'hi' : 'mr';
+    }
+  }
+
+  // Extract location from query if mentioned
   const matchedTopo = TOPOLOGY_PRESETS.find(p =>
-    locName.toLowerCase().includes(p.id) ||
+    query.includes(p.id) ||
+    query.includes(p.shortName.toLowerCase().split(' ')[0])
+  ) || TOPOLOGY_PRESETS.find(p =>
+    (location.name || '').toLowerCase().includes(p.id) ||
     (location.district && location.district.toLowerCase().includes(p.id))
   ) || TOPOLOGY_PRESETS[0];
 
@@ -74,10 +95,10 @@ export const sendMessage = async (message, context = {}) => {
   const friendNameEn = user?.name ? ` ${user.name}` : ' my friend';
 
   const buildResponse = ({ en, mr, hi, suggestionsEn, suggestionsMr, suggestionsHi }) => {
-    if (language === 'mr') {
+    if (targetLang === 'mr') {
       return { reply: mr, suggestions: suggestionsMr || ["🛒 औषध खरेदी लिंक्स व दुकाने", "🚜 आवश्यक शेती यंत्रे व स्प्रेअर", "💰 आजचे बाजारभाव", "🌦️ हवामान अंदाज"] };
     }
-    if (language === 'hi') {
+    if (targetLang === 'hi') {
       return { reply: hi, suggestions: suggestionsHi || ["🛒 कीटनाशक खरीद लिंक व दुकानें", "🚜 आवश्यक कृषि मशीनरी", "💰 मंडी भाव", "🌦️ मौसम रिपोर्ट"] };
     }
     return { reply: en, suggestions: suggestionsEn || ["🛒 Pest Medicine Buying Links", "🚜 Required Machinery & Sprayers", "💰 APMC Mandi Rates", "🌦️ Local Weather"] };

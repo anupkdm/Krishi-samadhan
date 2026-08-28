@@ -99,7 +99,7 @@ const TILE_PROVIDERS = {
 };
 
 const GIS = () => {
-  const { activeLocation, setCustomLocation } = useAuth();
+  const { activeLocation, changeActiveLocation } = useAuth();
   const { t, language } = useLanguage();
 
   const [coords, setCoords] = useState({
@@ -267,13 +267,6 @@ const GIS = () => {
           >
             <span>🔔</span> {t('activeAlertsCount')}
           </div>
-
-          <div
-            className="gis-badge-pill"
-            style={{ cursor: 'default', background: 'rgba(0,0,0,0.3)' }}
-          >
-            <span>👨‍🌾</span> {t('farmerLabel')}: <strong>{selectedPlot?.farmerName || 'Ramesh Patil'}</strong>
-          </div>
         </div>
       </div>
 
@@ -290,11 +283,10 @@ const GIS = () => {
             <select
               className="language-select-input"
               style={{ width: '100%', padding: '0.55rem' }}
-              value={Object.keys(AVAILABLE_LOCATIONS).find(k => AVAILABLE_LOCATIONS[k].name === activeLocation.name) || 'Sangamner'}
+              value={Object.keys(AVAILABLE_LOCATIONS).find(k => AVAILABLE_LOCATIONS[k].name === activeLocation?.name) || 'Sangamner'}
               onChange={(e) => {
-                const loc = AVAILABLE_LOCATIONS[e.target.value];
-                if (loc && setCustomLocation) {
-                  setCustomLocation(loc);
+                if (changeActiveLocation) {
+                  changeActiveLocation(e.target.value);
                 }
               }}
             >

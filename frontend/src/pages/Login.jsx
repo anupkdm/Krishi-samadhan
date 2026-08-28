@@ -49,17 +49,6 @@ const Login = () => {
     }
   };
 
-  const fillDemoCredentials = (role) => {
-    if (role === 'farmer') {
-      setEmail('farmer@krishisamadhan.in');
-      setPassword('farmer123');
-    } else {
-      setEmail('admin@krishisamadhan.in');
-      setPassword('admin123');
-    }
-    setError(null);
-  };
-
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
@@ -78,29 +67,6 @@ const Login = () => {
             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
               Sign in to access personalized agricultural advisories
             </p>
-          </div>
-
-          {/* Quick Demo Credentials Autofill */}
-          <div style={{ background: 'var(--primary-50)', border: '1px solid var(--primary-200)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', marginBottom: '1.25rem', fontSize: '0.82rem' }}>
-            <div style={{ fontWeight: '700', color: 'var(--primary-900)', marginBottom: '0.35rem' }}>⚡ Quick Demo Accounts:</div>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="btn btn-sm btn-secondary"
-                onClick={() => fillDemoCredentials('farmer')}
-                style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
-              >
-                🌾 Demo Farmer (Ramesh)
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline"
-                onClick={() => fillDemoCredentials('authority')}
-                style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
-              >
-                🏛️ Extension Officer
-              </button>
-            </div>
           </div>
 
           {error && (

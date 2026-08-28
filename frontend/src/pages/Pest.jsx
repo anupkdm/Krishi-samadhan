@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import SourceBadge from '../components/SourceBadge';
 import LoadingState from '../components/LoadingState';
-import pestService, { getStoredApiKey, setStoredApiKey } from '../services/pestService';
+import pestService from '../services/pestService';
 import { useLanguage } from '../context/LanguageContext';
 
 const Pest = () => {
@@ -13,19 +13,10 @@ const Pest = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [currentKey, setCurrentKey] = useState('');
   const [speaking, setSpeaking] = useState(false);
   const [activeTab, setActiveTab] = useState('treatment'); // 'treatment' | 'products' | 'machinery' | 'shops'
 
   const crops = ['Onion', 'Cotton', 'Tomato', 'Pomegranate', 'Sugarcane', 'Soybean', 'Wheat', 'Rice', 'Chilli', 'Gram', 'Guava', 'Grapes'];
-
-  useEffect(() => {
-    const saved = getStoredApiKey();
-    setCurrentKey(saved);
-    setApiKeyInput(saved);
-  }, []);
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -39,19 +30,6 @@ const Pest = () => {
       setError(null);
       setResult(null);
     }
-  };
-
-  const handleSaveApiKey = () => {
-    setStoredApiKey(apiKeyInput);
-    setCurrentKey(apiKeyInput);
-    setShowKeyModal(false);
-  };
-
-  const handleClearApiKey = () => {
-    setStoredApiKey('');
-    setCurrentKey('');
-    setApiKeyInput('');
-    setShowKeyModal(false);
   };
 
   const handleAnalyze = async () => {
@@ -123,19 +101,8 @@ const Pest = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <button
-              className="btn btn-sm btn-outline"
-              onClick={() => setShowKeyModal(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', borderColor: currentKey ? '#4ade80' : 'var(--border-subtle)' }}
-            >
-              <span>🔑</span>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>
-                {currentKey ? 'Gemini Vision AI Live' : 'Configure Vision API Key'}
-              </span>
-            </button>
-
             <SourceBadge
-              source={currentKey ? "Gemini Multimodal Vision API" : "CIBRC & ICAR Certified Pathology Engine"}
+              source="CIBRC & ICAR Certified Pathology Engine"
               status="Exact Accuracy"
             />
           </div>
@@ -602,60 +569,6 @@ const Pest = () => {
         </div>
       </div>
 
-      {/* GEMINI VISION API KEY CONFIGURATION MODAL */}
-      {showKeyModal && (
-        <div className="gis-modal-backdrop" onClick={() => setShowKeyModal(false)}>
-          <div className="gis-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary-900)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span>🔑</span> AI Vision Engine Settings
-              </h2>
-              <button
-                className="btn btn-sm"
-                onClick={() => setShowKeyModal(false)}
-                style={{ background: '#f3f4f6', border: 'none', cursor: 'pointer' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
-              Agri-Samadhan uses high-precision multimodal vision AI to analyze plant pathology images. You can connect your own <strong>Google Gemini API Key</strong> for real-time computer vision diagnosis.
-            </p>
-
-            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-              <label className="form-label">Gemini API Key</label>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="AIzaSy..."
-                value={apiKeyInput}
-                onChange={(e) => setApiKeyInput(e.target.value)}
-              />
-              <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-                Keys are stored securely in your local browser and sent only for pathology requests.
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {currentKey ? (
-                <button className="btn btn-sm btn-outline" onClick={handleClearApiKey} style={{ color: '#dc2626', borderColor: '#fca5a5' }}>
-                  Clear Key
-                </button>
-              ) : <div />}
-
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button className="btn btn-sm" onClick={() => setShowKeyModal(false)}>
-                  Cancel
-                </button>
-                <button className="btn btn-sm btn-primary" onClick={handleSaveApiKey}>
-                  Save & Activate
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   );
 };
